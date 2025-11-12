@@ -1,0 +1,18 @@
+name: Autocloser
+
+on: [issues, pull_request]
+
+jobs:
+  autoclose:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Autoclose issues/pr
+      uses: roots/issue-closer-action@v1.2
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        # issue
+        issue-close-message: "@${issue.user.login} We do not accept issues. If you have any questions, please feel free to contact us."
+        issue-pattern: "*"
+        # pr
+        pr-close-message: "@${issue.user.login} We do not accept PRs. If you have any questions, please feel free to contact us."
+        pr-pattern: "*"

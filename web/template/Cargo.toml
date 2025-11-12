@@ -1,0 +1,9 @@
+[package]
+name = "{{project-name}}"
+version = "0.1.0"
+description = "{{project-description}}"
+authors = ["{{authors}}"]
+license = "ISC"
+edition = "2024"
+
+[dependencies]
