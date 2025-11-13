@@ -14,29 +14,29 @@
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 //
 
-use std::time::Duration;
+use std::sync::Arc;
 
-use axum::{Router, response::Html, routing::get};
+use minijinja::Environment;
 use tokio::net::TcpListener;
-use tower_http::{
-    services::ServeDir, timeout::TimeoutLayer, trace::TraceLayer,
-};
 use tracing::info;
 
 mod helpers;
+mod router;
+mod state;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     helpers::init_tracing();
 
-    let app = Router::new()
-        .route("/", get(handler))
-        // TODO(msi): from config folder asssets
-        .nest_service("/assets", ServeDir::new("assets"))
-        .layer((
-            TraceLayer::new_for_http(),
-            TimeoutLayer::new(Duration::from_secs(10)), // TODO(msi): from config
-        ));
+    let mut env = Environment::new();
+    env.add_template("layout", include_str!("../templates/layout.jinja"))?;
+    env.add_template("home", include_str!("../templates/home.jinja"))?;
+    env.add_template("content", include_str!("../templates/content.jinja"))?;
+    env.add_template("about", include_str!("../templates/about.jinja"))?;
+
+    let app_state = Arc::new(state::AppState { env });
+
+    let app = router::route(app_state);
 
     // TODO(msi): from config
     let listener = TcpListener::bind("0.0.0.0:3000").await?;
@@ -46,19 +46,4 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     Ok(())
-}
-
-const INDEX: &'static str = r#"<html>
-<head>
-<link href="/assets/css/styles.css" rel="stylesheet" type="text/css">
-</head>
-<body>
-<h1><h1>Hello, World {{project-name}} =]</h1>
-<p>Template form https://ijanc.org</p>
-</body>
-</html>
-"#;
-
-async fn handler() -> Html<&'static str> {
-    Html(INDEX)
 }
