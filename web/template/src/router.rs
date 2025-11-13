@@ -19,6 +19,7 @@ use axum::{
     Router,
     extract::State,
     http::{HeaderName, Request, StatusCode},
+    middleware,
     response::{Html, IntoResponse},
     routing::get,
 };
@@ -33,6 +34,7 @@ use tower_http::{
 };
 use tracing::{error, info_span};
 
+use crate::metric::track_metrics;
 use crate::state::AppState;
 
 const REQUEST_ID_HEADER: &str = "x-request-id";
@@ -49,26 +51,27 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
         .layer((
             SetRequestIdLayer::new(x_request_id.clone(), MakeRequestUuid),
             TraceLayer::new_for_http().make_span_with(
-            |request: &Request<_>| {
-                // Log the request id as generated.
-                let request_id = request.headers().get(REQUEST_ID_HEADER);
+                |request: &Request<_>| {
+                    // Log the request id as generated.
+                    let request_id = request.headers().get(REQUEST_ID_HEADER);
 
-                match request_id {
-                    Some(request_id) => info_span!(
-                        "http_request",
-                        request_id = ?request_id,
-                    ),
-                    None => {
-                        error!("could not extract request_id");
-                        info_span!("http_request")
+                    match request_id {
+                        Some(request_id) => info_span!(
+                            "http_request",
+                            request_id = ?request_id,
+                        ),
+                        None => {
+                            error!("could not extract request_id");
+                            info_span!("http_request")
+                        }
                     }
-                }
-            },
+                },
             ),
             // TODO(msi): from config
             TimeoutLayer::new(Duration::from_secs(10)),
-            PropagateRequestIdLayer::new(x_request_id)
+            PropagateRequestIdLayer::new(x_request_id),
         ))
+        .route_layer(middleware::from_fn(track_metrics))
         .route("/healthz", get(healthz))
         .with_state(app_state)
 }

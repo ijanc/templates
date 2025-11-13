@@ -21,6 +21,7 @@ use tokio::net::TcpListener;
 use tracing::info;
 
 mod helpers;
+mod metric;
 mod router;
 mod state;
 
@@ -28,6 +29,12 @@ mod state;
 async fn main() -> anyhow::Result<()> {
     helpers::init_tracing();
 
+    let (_main_server, _metrics_server) =
+        tokio::join!(start_main_server(), metric::start_metrics_server());
+    Ok(())
+}
+
+async fn start_main_server() -> anyhow::Result<()> {
     let mut env = Environment::new();
     env.add_template("layout", include_str!("../templates/layout.jinja"))?;
     env.add_template("home", include_str!("../templates/home.jinja"))?;
@@ -44,6 +51,5 @@ async fn main() -> anyhow::Result<()> {
     axum::serve(listener, app)
         .with_graceful_shutdown(helpers::shutdown_signal())
         .await?;
-
     Ok(())
 }
