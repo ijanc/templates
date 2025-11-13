@@ -7,3 +7,10 @@ license = "ISC"
 edition = "2024"
 
 [dependencies]
+anyhow = "=1.0.100"
+axum = "=0.8.6"
+serde = { version = "=1.0.228", features = ["derive"] }
+tokio = { version = "=1.48.0", features = ["macros", "rt-multi-thread", "signal"] }
+tower-http = { version = "=0.6.6", features = ["timeout", "trace"] }
+tracing = "=0.1.41"
+tracing-subscriber = { version = "=0.3.20", features = ["env-filter"] }
