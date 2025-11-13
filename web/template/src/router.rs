@@ -16,13 +16,14 @@
 use std::sync::Arc;
 
 use axum::{
-    Router,
+    Form, Router,
     extract::State,
     http::{HeaderName, Request, StatusCode},
     middleware,
     response::{Html, IntoResponse, Redirect},
     routing::get,
 };
+use axum_csrf::{CsrfConfig, CsrfLayer, CsrfToken, Key};
 use axum_messages::{Messages, MessagesManagerLayer};
 use minijinja::context;
 use serde::{Deserialize, Serialize};
@@ -47,10 +48,19 @@ const REQUEST_ID_HEADER: &str = "x-request-id";
 #[derive(Default, Deserialize, Serialize)]
 struct Counter(usize);
 
+#[derive(Deserialize, Serialize)]
+struct Keys {
+    authenticity_token: String,
+}
+
 pub(crate) fn route(app_state: Arc<AppState>) -> Router {
     let x_request_id = HeaderName::from_static(REQUEST_ID_HEADER);
 
     let session_store = MemoryStore::default();
+    let cookie_key = Key::generate();
+    let config = CsrfConfig::default()
+        .with_key(Some(cookie_key))
+        .with_cookie_domain(Some("127.0.0.1"));
 
     Router::new()
         .route("/", get(handler_home))
@@ -59,6 +69,7 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
         .route("/session", get(handler_session))
         .route("/message", get(set_messages_handler))
         .route("/read-messages", get(read_messages_handler))
+        .route("/csrf", get(csrf_root).post(csrf_check_key))
         .layer(MessagesManagerLayer)
         // TODO(msi): from config folder asssets
         .nest_service("/assets", ServeDir::new("assets"))
@@ -85,6 +96,7 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
                 .with_secure(false)
                 .with_expiry(Expiry::OnInactivity(Duration::seconds(10))),
             MessagesManagerLayer,
+            CsrfLayer::new(config),
             // TODO(msi): from config
             TimeoutLayer::new(std::time::Duration::from_secs(10)),
             PropagateRequestIdLayer::new(x_request_id),
@@ -92,6 +104,34 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
         .route_layer(middleware::from_fn(track_metrics))
         .route("/healthz", get(healthz))
         .with_state(app_state)
+}
+
+async fn csrf_root(
+    token: CsrfToken,
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    let template = state.env.get_template("csrf").unwrap();
+
+    let rendered = template
+        .render(context! {
+            title => "Csrf",
+            authenticity_token => token.authenticity_token().unwrap(),
+        })
+        .unwrap();
+    // We must return the token so that into_response will run and add it to our response cookies.
+    (token, Html(rendered)).into_response()
+}
+
+async fn csrf_check_key(
+    token: CsrfToken,
+    Form(payload): Form<Keys>,
+) -> &'static str {
+    // Verfiy the Hash and return the String message.
+    if token.verify(&payload.authenticity_token).is_err() {
+        "Token is invalid"
+    } else {
+        "Token is Valid lets do stuff!"
+    }
 }
 
 async fn set_messages_handler(messages: Messages) -> impl IntoResponse {

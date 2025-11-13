@@ -8,8 +8,9 @@ edition = "2024"
 
 [dependencies]
 anyhow = "=1.0.100"
-axum = "=0.8.6"
+axum = { version = "=0.8.6", features = ["macros"] }
 axum-messages = "0.8.0"
+axum_csrf = { version = "0.11.0", features = ["layer"] }
 metrics = { version = "=0.24.2", default-features = false }
 metrics-exporter-prometheus = { version = "=0.17.2", default-features = false }
 minijinja = "=2.12.0"

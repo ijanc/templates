@@ -11,5 +11,5 @@
 * [x] Tracing
 * [x] Messages (like flask)
 * [x] Sessions
-* [ ] CSRF
+* [x] CSRF
 * [ ] 404

@@ -1,0 +1,10 @@
+{% extends "layout" %}
+{% block title %}{{ super() }} | {{ title }} {% endblock %}
+{% block body %}
+<h1>{{ title }}</h1>
+<p>{{ about_text }}</p>
+ <form method="post" action="/csrf">
+            <input type="hidden" name="authenticity_token" value="{{ authenticity_token }}"/>
+            <input id="button" type="submit" value="Submit" tabindex="4" />
+        </form>
+{% endblock %}
