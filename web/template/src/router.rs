@@ -20,9 +20,10 @@ use axum::{
     extract::State,
     http::{HeaderName, Request, StatusCode},
     middleware,
-    response::{Html, IntoResponse},
+    response::{Html, IntoResponse, Redirect},
     routing::get,
 };
+use axum_messages::{Messages, MessagesManagerLayer};
 use minijinja::context;
 use serde::{Deserialize, Serialize};
 use time::Duration;
@@ -56,6 +57,9 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
         .route("/content", get(handler_content))
         .route("/about", get(handler_about))
         .route("/session", get(handler_session))
+        .route("/message", get(set_messages_handler))
+        .route("/read-messages", get(read_messages_handler))
+        .layer(MessagesManagerLayer)
         // TODO(msi): from config folder asssets
         .nest_service("/assets", ServeDir::new("assets"))
         .layer((
@@ -80,6 +84,7 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
             SessionManagerLayer::new(session_store)
                 .with_secure(false)
                 .with_expiry(Expiry::OnInactivity(Duration::seconds(10))),
+            MessagesManagerLayer,
             // TODO(msi): from config
             TimeoutLayer::new(std::time::Duration::from_secs(10)),
             PropagateRequestIdLayer::new(x_request_id),
@@ -87,6 +92,22 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
         .route_layer(middleware::from_fn(track_metrics))
         .route("/healthz", get(healthz))
         .with_state(app_state)
+}
+
+async fn set_messages_handler(messages: Messages) -> impl IntoResponse {
+    messages.info("Hello, world!").debug("This is a debug message.");
+
+    Redirect::to("/read-messages")
+}
+
+async fn read_messages_handler(messages: Messages) -> impl IntoResponse {
+    let messages = messages
+        .into_iter()
+        .map(|message| format!("{}: {}", message.level, message))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    if messages.is_empty() { "No messages yet!".to_string() } else { messages }
 }
 
 async fn handler_session(session: Session) -> impl IntoResponse {

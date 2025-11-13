@@ -9,7 +9,7 @@
 * [x] Static files
 * [ ] Config
 * [x] Tracing
-* [ ] Messages (like flask)
+* [x] Messages (like flask)
 * [x] Sessions
 * [ ] CSRF
 * [ ] 404
