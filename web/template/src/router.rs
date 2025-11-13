@@ -13,7 +13,7 @@
 // ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 //
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use axum::{
     Router,
@@ -24,6 +24,8 @@ use axum::{
     routing::get,
 };
 use minijinja::context;
+use serde::{Deserialize, Serialize};
+use time::Duration;
 use tower_http::{
     request_id::{
         MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer,
@@ -32,20 +34,28 @@ use tower_http::{
     timeout::TimeoutLayer,
     trace::TraceLayer,
 };
+use tower_sessions::{Expiry, MemoryStore, Session, SessionManagerLayer};
 use tracing::{error, info_span};
 
 use crate::metric::track_metrics;
 use crate::state::AppState;
 
+const COUNTER_KEY: &str = "counter";
 const REQUEST_ID_HEADER: &str = "x-request-id";
+
+#[derive(Default, Deserialize, Serialize)]
+struct Counter(usize);
 
 pub(crate) fn route(app_state: Arc<AppState>) -> Router {
     let x_request_id = HeaderName::from_static(REQUEST_ID_HEADER);
+
+    let session_store = MemoryStore::default();
 
     Router::new()
         .route("/", get(handler_home))
         .route("/content", get(handler_content))
         .route("/about", get(handler_about))
+        .route("/session", get(handler_session))
         // TODO(msi): from config folder asssets
         .nest_service("/assets", ServeDir::new("assets"))
         .layer((
@@ -67,13 +77,23 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
                     }
                 },
             ),
+            SessionManagerLayer::new(session_store)
+                .with_secure(false)
+                .with_expiry(Expiry::OnInactivity(Duration::seconds(10))),
             // TODO(msi): from config
-            TimeoutLayer::new(Duration::from_secs(10)),
+            TimeoutLayer::new(std::time::Duration::from_secs(10)),
             PropagateRequestIdLayer::new(x_request_id),
         ))
         .route_layer(middleware::from_fn(track_metrics))
         .route("/healthz", get(healthz))
         .with_state(app_state)
+}
+
+async fn handler_session(session: Session) -> impl IntoResponse {
+    let counter: Counter =
+        session.get(COUNTER_KEY).await.unwrap().unwrap_or_default();
+    session.insert(COUNTER_KEY, counter.0 + 1).await.unwrap();
+    format!("Current count: {}", counter.0)
 }
 
 async fn healthz() -> impl IntoResponse {

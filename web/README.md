@@ -1,10 +1,15 @@
 # web template
 
-* Axum
-* Graceful Shutdown
-* Minijinja
-* Prometheus
-* Middleware Ip
-* Config
-* Tracing
-* 404
+* [x] Axum
+* [x] Graceful Shutdown
+* [x] Minijinja
+* [x] Prometheus
+* [ ] Middleware Ip
+* [x] Request Id Header
+* [x] Static files
+* [ ] Config
+* [x] Tracing
+* [ ] Messages (like flask)
+* [x] Sessions
+* [ ] CSRF
+* [ ] 404
