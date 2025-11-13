@@ -18,30 +18,58 @@ use std::{sync::Arc, time::Duration};
 use axum::{
     Router,
     extract::State,
-    http::StatusCode,
+    http::{HeaderName, Request, StatusCode},
     response::{Html, IntoResponse},
     routing::get,
 };
 use minijinja::context;
 use tower_http::{
-    services::ServeDir, timeout::TimeoutLayer, trace::TraceLayer,
+    request_id::{
+        MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer,
+    },
+    services::ServeDir,
+    timeout::TimeoutLayer,
+    trace::TraceLayer,
 };
+use tracing::{error, info_span};
 
 use crate::state::AppState;
 
+const REQUEST_ID_HEADER: &str = "x-request-id";
+
 pub(crate) fn route(app_state: Arc<AppState>) -> Router {
+    let x_request_id = HeaderName::from_static(REQUEST_ID_HEADER);
+
     Router::new()
-        .route("/healthz", get(healthz))
         .route("/", get(handler_home))
         .route("/content", get(handler_content))
         .route("/about", get(handler_about))
         // TODO(msi): from config folder asssets
         .nest_service("/assets", ServeDir::new("assets"))
         .layer((
-            TraceLayer::new_for_http(),
+            SetRequestIdLayer::new(x_request_id.clone(), MakeRequestUuid),
+            TraceLayer::new_for_http().make_span_with(
+            |request: &Request<_>| {
+                // Log the request id as generated.
+                let request_id = request.headers().get(REQUEST_ID_HEADER);
+
+                match request_id {
+                    Some(request_id) => info_span!(
+                        "http_request",
+                        request_id = ?request_id,
+                    ),
+                    None => {
+                        error!("could not extract request_id");
+                        info_span!("http_request")
+                    }
+                }
+            },
+            ),
             // TODO(msi): from config
             TimeoutLayer::new(Duration::from_secs(10)),
+            PropagateRequestIdLayer::new(x_request_id)
         ))
+        .route("/healthz", get(healthz))
         .with_state(app_state)
 }
 
