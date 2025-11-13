@@ -16,7 +16,11 @@
 use std::{sync::Arc, time::Duration};
 
 use axum::{
-    Router, extract::State, http::StatusCode, response::Html, routing::get,
+    Router,
+    extract::State,
+    http::StatusCode,
+    response::{Html, IntoResponse},
+    routing::get,
 };
 use minijinja::context;
 use tower_http::{
@@ -27,6 +31,7 @@ use crate::state::AppState;
 
 pub(crate) fn route(app_state: Arc<AppState>) -> Router {
     Router::new()
+        .route("/healthz", get(healthz))
         .route("/", get(handler_home))
         .route("/content", get(handler_content))
         .route("/about", get(handler_about))
@@ -38,6 +43,10 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
             TimeoutLayer::new(Duration::from_secs(10)),
         ))
         .with_state(app_state)
+}
+
+async fn healthz() -> impl IntoResponse {
+    StatusCode::OK
 }
 
 async fn handler_home(
