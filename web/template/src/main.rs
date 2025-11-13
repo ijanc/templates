@@ -18,7 +18,9 @@ use std::time::Duration;
 
 use axum::{Router, response::Html, routing::get};
 use tokio::net::TcpListener;
-use tower_http::{timeout::TimeoutLayer, trace::TraceLayer};
+use tower_http::{
+    services::ServeDir, timeout::TimeoutLayer, trace::TraceLayer,
+};
 use tracing::info;
 
 mod helpers;
@@ -27,10 +29,14 @@ mod helpers;
 async fn main() -> anyhow::Result<()> {
     helpers::init_tracing();
 
-    let app = Router::new().route("/", get(handler)).layer((
-        TraceLayer::new_for_http(),
-        TimeoutLayer::new(Duration::from_secs(10)), // TODO(msi): from config
-    ));
+    let app = Router::new()
+        .route("/", get(handler))
+        // TODO(msi): from config folder asssets
+        .nest_service("/assets", ServeDir::new("assets"))
+        .layer((
+            TraceLayer::new_for_http(),
+            TimeoutLayer::new(Duration::from_secs(10)), // TODO(msi): from config
+        ));
 
     // TODO(msi): from config
     let listener = TcpListener::bind("0.0.0.0:3000").await?;
@@ -42,6 +48,17 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+const INDEX: &'static str = r#"<html>
+<head>
+<link href="/assets/css/styles.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<h1><h1>Hello, World {{project-name}} =]</h1>
+<p>Template form https://ijanc.org</p>
+</body>
+</html>
+"#;
+
 async fn handler() -> Html<&'static str> {
-    Html("<h1>Hello, World {{project-name}} =]</h1>")
+    Html(INDEX)
 }
