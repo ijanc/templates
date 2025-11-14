@@ -1,0 +1,3 @@
+[submodule "vendor/custom-bootstrap"]
+	path = vendor/custom-bootstrap
+	url = git@github.com:ijanc/custom-bootstrap
