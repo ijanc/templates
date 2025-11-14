@@ -9,8 +9,9 @@ edition = "2024"
 [dependencies]
 anyhow = "=1.0.100"
 axum = { version = "=0.8.6", features = ["macros"] }
-axum-messages = "0.8.0"
-axum_csrf = { version = "0.11.0", features = ["layer"] }
+axum-messages = "=0.8.0"
+axum_csrf = { version = "=0.11.0", features = ["layer"] }
+config = { version = "=0.15.19", default-features = false, features = ["toml"] }
 metrics = { version = "=0.24.2", default-features = false }
 metrics-exporter-prometheus = { version = "=0.17.2", default-features = false }
 minijinja = "=2.12.0"
@@ -21,4 +22,3 @@ tower-http = { version = "=0.6.6", features = ["timeout", "trace", "fs", "reques
 tower-sessions = "=0.14.0"
 tracing = "=0.1.41"
 tracing-subscriber = { version = "=0.3.20", features = ["env-filter"] }
-

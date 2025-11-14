@@ -24,10 +24,13 @@ mod helpers;
 mod metric;
 mod router;
 mod state;
+mod settings;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     helpers::init_tracing();
+
+    let _settings = settings::Settings::new();
 
     let (_main_server, _metrics_server) =
         tokio::join!(start_main_server(), metric::start_metrics_server());

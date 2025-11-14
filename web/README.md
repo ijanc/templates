@@ -7,7 +7,7 @@
 * [ ] Middleware Ip
 * [x] Request Id Header
 * [x] Static files
-* [ ] Config
+* [x] Config
 * [x] Tracing
 * [x] Messages (like flask)
 * [x] Sessions
