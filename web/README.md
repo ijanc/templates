@@ -4,7 +4,7 @@
 * [x] Graceful Shutdown
 * [x] Minijinja
 * [x] Prometheus
-* [ ] Middleware Ip
+* [x] Middleware Ip
 * [x] Request Id Header
 * [x] Static files
 * [x] Config

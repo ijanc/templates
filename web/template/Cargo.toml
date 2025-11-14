@@ -9,6 +9,7 @@ edition = "2024"
 [dependencies]
 anyhow = "=1.0.100"
 axum = { version = "=0.8.6", features = ["macros"] }
+axum-client-ip = "=1.1.3"
 axum-messages = "=0.8.0"
 axum_csrf = { version = "=0.11.0", features = ["layer"] }
 config = { version = "=0.15.19", default-features = false, features = ["toml"] }

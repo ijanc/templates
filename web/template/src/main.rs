@@ -14,6 +14,7 @@
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 //
 
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use minijinja::Environment;
@@ -23,8 +24,8 @@ use tracing::info;
 mod helpers;
 mod metric;
 mod router;
-mod state;
 mod settings;
+mod state;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -52,8 +53,11 @@ async fn start_main_server() -> anyhow::Result<()> {
     // TODO(msi): from config
     let listener = TcpListener::bind("0.0.0.0:3000").await?;
     info!("listening on http://{}", listener.local_addr().unwrap());
-    axum::serve(listener, app)
-        .with_graceful_shutdown(helpers::shutdown_signal())
-        .await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(helpers::shutdown_signal())
+    .await?;
     Ok(())
 }

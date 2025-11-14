@@ -48,7 +48,8 @@ pub(crate) struct Settings {
 impl Settings {
     pub(crate) fn new() -> Result<Self, ConfigError> {
         info!("loading settings");
-        let run_mode = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
+        let run_mode =
+            env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
 
         let s = Config::builder()
             // Start off by merging in the "default" configuration file
@@ -57,8 +58,7 @@ impl Settings {
             // Default to 'development' env
             // Note that this file is _optional_
             .add_source(
-                File::with_name(&format!("config/{run_mode}"))
-                    .required(false),
+                File::with_name(&format!("config/{run_mode}")).required(false),
             )
             // Add in a local configuration file
             // This file shouldn't be checked in to git

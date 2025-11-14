@@ -23,6 +23,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect},
     routing::get,
 };
+use axum_client_ip::{ClientIp, ClientIpSource};
 use axum_csrf::{CsrfConfig, CsrfLayer, CsrfToken, Key};
 use axum_messages::{Messages, MessagesManagerLayer};
 use minijinja::context;
@@ -62,6 +63,9 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
         .with_key(Some(cookie_key))
         .with_cookie_domain(Some("127.0.0.1"));
 
+    // TODO(msi): from config, if debug mode
+    let ip_source = ClientIpSource::ConnectInfo;
+
     Router::new()
         .route("/", get(handler_home))
         .route("/content", get(handler_content))
@@ -70,6 +74,7 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
         .route("/message", get(set_messages_handler))
         .route("/read-messages", get(read_messages_handler))
         .route("/csrf", get(csrf_root).post(csrf_check_key))
+        .route("/ip", get(ip_handler))
         .layer(MessagesManagerLayer)
         // TODO(msi): from config folder asssets
         .nest_service("/assets", ServeDir::new("assets"))
@@ -97,6 +102,7 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
                 .with_expiry(Expiry::OnInactivity(Duration::seconds(10))),
             MessagesManagerLayer,
             CsrfLayer::new(config),
+            ip_source.into_extension(),
             // TODO(msi): from config
             TimeoutLayer::new(std::time::Duration::from_secs(10)),
             PropagateRequestIdLayer::new(x_request_id),
@@ -104,6 +110,10 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
         .route_layer(middleware::from_fn(track_metrics))
         .route("/healthz", get(healthz))
         .with_state(app_state)
+}
+
+async fn ip_handler(ClientIp(ip): ClientIp) -> String {
+    ip.to_string()
 }
 
 async fn csrf_root(
