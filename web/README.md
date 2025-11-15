@@ -12,4 +12,5 @@
 * [x] Messages (like flask)
 * [x] Sessions
 * [x] CSRF
+* [x] Validation
 * [ ] 404

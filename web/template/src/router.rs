@@ -13,21 +13,24 @@
 // ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 // OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 //
+
 use std::sync::Arc;
 
 use axum::{
-    Form, Router,
-    extract::State,
-    http::{HeaderName, Request, StatusCode},
+    Router,
+    extract::{Form, FromRequest, Request, State, rejection::FormRejection},
+    http::{self, HeaderName, StatusCode},
     middleware,
-    response::{Html, IntoResponse, Redirect},
+    response::{Html, IntoResponse, Redirect, Response},
     routing::get,
 };
 use axum_client_ip::{ClientIp, ClientIpSource};
 use axum_csrf::{CsrfConfig, CsrfLayer, CsrfToken, Key};
 use axum_messages::{Messages, MessagesManagerLayer};
 use minijinja::context;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 use time::Duration;
 use tower_http::{
     request_id::{
@@ -39,6 +42,7 @@ use tower_http::{
 };
 use tower_sessions::{Expiry, MemoryStore, Session, SessionManagerLayer};
 use tracing::{error, info_span};
+use validator::Validate;
 
 use crate::metric::track_metrics;
 use crate::state::AppState;
@@ -75,13 +79,17 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
         .route("/read-messages", get(read_messages_handler))
         .route("/csrf", get(csrf_root).post(csrf_check_key))
         .route("/ip", get(ip_handler))
+        .route(
+            "/validation",
+            get(get_validation_handler).post(post_validation_handler),
+        )
         .layer(MessagesManagerLayer)
         // TODO(msi): from config folder asssets
         .nest_service("/assets", ServeDir::new("assets"))
         .layer((
             SetRequestIdLayer::new(x_request_id.clone(), MakeRequestUuid),
             TraceLayer::new_for_http().make_span_with(
-                |request: &Request<_>| {
+                |request: &http::Request<_>| {
                     // Log the request id as generated.
                     let request_id = request.headers().get(REQUEST_ID_HEADER);
 
@@ -110,6 +118,74 @@ pub(crate) fn route(app_state: Arc<AppState>) -> Router {
         .route_layer(middleware::from_fn(track_metrics))
         .route("/healthz", get(healthz))
         .with_state(app_state)
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct NameInput {
+    #[validate(length(min = 2, message = "Can not be empty"))]
+    pub name: String,
+}
+
+async fn get_validation_handler(
+    State(state): State<Arc<AppState>>,
+) -> Result<Html<String>, ServerError> {
+    let template = state.env.get_template("validation").unwrap();
+
+    let rendered = template.render(context! {}).unwrap();
+
+    Ok(Html(rendered))
+}
+
+async fn post_validation_handler(
+    ValidatedForm(input): ValidatedForm<NameInput>,
+) -> Html<String> {
+    Html(format!("<h1>Hello, {}!</h1>", input.name))
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ValidatedForm<T>(pub T);
+
+impl<T, S> FromRequest<S> for ValidatedForm<T>
+where
+    T: DeserializeOwned + Validate,
+    S: Send + Sync,
+    Form<T>: FromRequest<S, Rejection = FormRejection>,
+{
+    type Rejection = ServerError;
+
+    async fn from_request(
+        req: Request,
+        state: &S,
+    ) -> Result<Self, Self::Rejection> {
+        let Form(value) = Form::<T>::from_request(req, state).await?;
+        value.validate()?;
+        Ok(ValidatedForm(value))
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum ServerError {
+    #[error(transparent)]
+    ValidationError(#[from] validator::ValidationErrors),
+
+    #[error(transparent)]
+    AxumFormRejection(#[from] FormRejection),
+}
+
+impl IntoResponse for ServerError {
+    fn into_response(self) -> Response {
+        match self {
+            ServerError::ValidationError(_) => {
+                let message = format!("Input validation error: [{self}]")
+                    .replace('\n', ", ");
+                (StatusCode::BAD_REQUEST, message)
+            }
+            ServerError::AxumFormRejection(_) => {
+                (StatusCode::BAD_REQUEST, self.to_string())
+            }
+        }
+        .into_response()
+    }
 }
 
 async fn ip_handler(ClientIp(ip): ClientIp) -> String {

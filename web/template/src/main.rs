@@ -45,6 +45,10 @@ async fn start_main_server() -> anyhow::Result<()> {
     env.add_template("content", include_str!("../templates/content.jinja"))?;
     env.add_template("about", include_str!("../templates/about.jinja"))?;
     env.add_template("csrf", include_str!("../templates/csrf.jinja"))?;
+    env.add_template(
+        "validation",
+        include_str!("../templates/validation.jinja"),
+    )?;
 
     let app_state = Arc::new(state::AppState { env });
 
