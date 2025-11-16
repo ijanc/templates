@@ -1,0 +1,58 @@
+[package]
+name = "{{project-name}}"
+version = "0.1.0"
+
+authors = ["{{authors}}"]
+description = "{{project-description}}"
+edition = "2024"
+license = "ISC"
+
+#
+# lints
+#
+
+[lints.rust]
+absolute_paths_not_starting_with_crate = "warn"
+non_ascii_idents = "warn"
+tail_expr_drop_order = "warn"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage)', 'cfg(coverage_nightly)'] }
+unit-bindings = "warn"
+unsafe_op_in_unsafe_fn = "warn"
+unused_unsafe = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+
+#
+# dep
+#
+
+[dependencies]
+
+
+#
+# profiles
+#
+
+[profile.dev]
+debug = false
+
+[profile.test]
+debug = false
+
+[profile.release-with-debug]
+inherits = "release"
+strip = false
+debug = true
+
+[profile.coverage]
+inherits = "release"
+opt-level = 2
+codegen-units = 256
+lto = "thin"
+debug-assertions = true
+overflow-checks = true
+
+[profile.dev-no-debug-assertions]
+inherits = "dev"
+debug-assertions = false

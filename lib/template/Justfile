@@ -1,0 +1,38 @@
+#!/usr/bin/env -S just --justfile
+
+_default:
+  @just --list -u
+
+# ==================== ALIASES ====================
+alias r := ci
+
+# ==================== SETUP & INITIALIZATION ====================
+
+# Install git pre-commit hook to format files
+install-hook:
+  echo -e "#!/bin/sh\njust fmt" > .git/hooks/pre-commit
+  chmod +x .git/hooks/pre-commit
+
+# ==================== CORE DEVELOPMENT ====================
+
+watch +args='test --all':
+  cargo watch --clear --exec '{{args}}'
+
+ci:
+  cargo test --all
+  cargo clippy --all
+  cargo fmt --all -- --check
+
+# publish current master branch
+publish:
+  #!/usr/bin/env bash
+  set -euxo pipefail
+  rm -rf tmp/release
+  git clone git@github.com
+  VERSION=`sed -En 's/version[[:space:]]*=[[:space:]]*"([^"]+)"/\1/p' Cargo.toml | head -1`
+  cd tmp/release
+  git tag -a $VERSION -m "Release $VERSION"
+  git push origin $VERSION
+  cargo publish
+  cd ../..
+  rm -rf tmp/release
