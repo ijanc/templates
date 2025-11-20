@@ -2,13 +2,13 @@ use std::process::Command;
 
 fn main() {
     let git_hash = Command::new("git")
-        .args(["rev-parse", "HEAD"])
+        .args(["rev-parse", "--short=6", "HEAD"])
         .output()
         .map(|out| String::from_utf8_lossy(&out.stdout).trim().to_string())
         .unwrap_or_else(|_| "unknown".into());
 
     let git_date = Command::new("git")
-        .args(["show", "-s", "--format=%cI", "HEAD"])
+        .args(["show", "-s", "--format=%cd", "--date=short", "HEAD"])
         .output()
         .map(|out| String::from_utf8_lossy(&out.stdout).trim().to_string())
         .unwrap_or_else(|_| "unknown".into());
