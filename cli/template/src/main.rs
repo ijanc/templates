@@ -57,6 +57,15 @@ fn main() -> Result<()> {
 fn init_logger(verbose: u8) {
     use std::io::Write;
 
+    if std::env::var_os("RUST_LOG").is_some() {
+        env_logger::builder()
+            .format(|buf, record| {
+                writeln!(buf, "[{}]: {}", record.level(), record.args())
+            })
+            .init();
+        return;
+    }
+
     let level =
         if verbose > 0 { LevelFilter::Debug } else { LevelFilter::Info };
 
