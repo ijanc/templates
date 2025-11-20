@@ -18,9 +18,7 @@ use anyhow::Result;
 use clap::{ArgAction, Parser};
 use log::{LevelFilter, info, debug};
 
-const LONG_VERSION: &str = concat!(
-    env!("CARGO_PKG_NAME"),
-    " ",
+const VERSION: &str = concat!(
     env!("CARGO_PKG_VERSION"),
     " (",
     env!("GIT_HASH", "unknown"),
@@ -33,8 +31,7 @@ const LONG_VERSION: &str = concat!(
 #[command(
     name = "{{project-name}}",
     about = "{{project-description}}",
-    version = env!("CARGO_PKG_VERSION"),
-    long_version = LONG_VERSION,
+    version = VERSION,
     author,
     propagate_version = true
 )]
