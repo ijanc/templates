@@ -4,6 +4,7 @@
   "toml": {
   },
   "excludes": [
+    "deny.toml"
   ],
   "exec": {
     "cwd": "${configDir}",
