@@ -20,5 +20,6 @@ cargo binstall cargo-generate -y
 
 | Name                   | Description          |
 | ---------------------- | -------------------- |
-| [web](./web/README.md) | Axum render template |
+| [cli](./cli/README.md) | Simple cli template  |
 | [lib](./lib/README.md) | Simple lib           |
+| [web](./web/README.md) | Axum render template |
