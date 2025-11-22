@@ -16,7 +16,12 @@
 
 use anyhow::Result;
 use clap::{ArgAction, Parser};
-use log::{LevelFilter, info, debug};
+{% if project-diagnosis == "log" -%}
+use log::{debug, info};
+{% else -%}
+use tracing::{debug, info};
+use tracing_subscriber::EnvFilter;
+{% endif %}
 
 const VERSION: &str = concat!(
     env!("CARGO_PKG_VERSION"),
@@ -54,8 +59,16 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+{% if project-diagnosis == "log" -%}
+/// Initialize log based on RUST_LOG and the CLI verbosity.
+///
+/// Rules:
+/// - If RUST_LOG is set, it is fully respected.
+/// - If RUST_LOG is not set and verbose == 0 -> INFO level.
+/// - If RUST_LOG is not set and verbose  > 0 -> DEBUG level.
 fn init_logger(verbose: u8) {
     use std::io::Write;
+    use log::LevelFilter;
 
     if std::env::var_os("RUST_LOG").is_some() {
         env_logger::builder()
@@ -76,3 +89,27 @@ fn init_logger(verbose: u8) {
         })
         .init();
 }
+{% else -%}
+/// Initialize tracing based on RUST_LOG and the CLI verbosity.
+///
+/// Rules:
+/// - If RUST_LOG is set, it is fully respected.
+/// - If RUST_LOG is not set and verbose == 0 -> INFO level.
+/// - If RUST_LOG is not set and verbose  > 0 -> DEBUG level.
+fn init_logger(verbose: u8) {
+    if std::env::var_os("RUST_LOG").is_some() {
+        tracing_subscriber::fmt()
+            .with_env_filter(EnvFilter::from_default_env())
+            .init();
+        return;
+    }
+
+    let filter = if verbose > 0 {
+        EnvFilter::new("debug")
+    } else {
+        EnvFilter::new("info")
+    };
+
+    tracing_subscriber::fmt().with_env_filter(filter).init();
+}
+{% endif %}

@@ -3,3 +3,4 @@ cargo_generate_version = ">=0.23.0"
 
 [placeholders]
 project-description = { type = "string", prompt = "Short description of the project", default = "An example generated using the simple template" }
+project-diagnosis = { prompt = "Enter log or tracing", choices = ["log", "tracing"], default = "log", type = "string" }
