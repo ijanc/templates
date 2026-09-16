@@ -1,0 +1,5 @@
+# configuration for https://cargo-generate.github.io/cargo-generate/
+
+[template]
+cargo_generate_version = ">=0.21.1"
+sub_templates = ["daemon"]

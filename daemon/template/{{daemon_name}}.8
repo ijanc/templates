@@ -1,0 +1,91 @@
+.\" SPDX-License-Identifier: ISC
+.\" SPDX-FileCopyrightText: {{year}} {{authors}}
+.Dd $Mdocdate: {{mdocdate}} $
+.Dt {{daemon_name | upcase}} 8
+.Os
+.Sh NAME
+.Nm {{daemon_name}}
+.Nd example daemon
+.Sh SYNOPSIS
+.Nm {{daemon_name}}
+.Op Fl dnv
+.Op Fl f Ar file
+.Op Fl s Ar socket
+.Sh DESCRIPTION
+.Nm
+is a template daemon.
+It detaches from the terminal, logs to
+.Xr syslogd 8 ,
+listens on a control socket for
+.Xr {{ctl_name}} 8
+and runs a periodic task.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl d
+Do not daemonize.
+If this option is specified,
+.Nm
+will run in the foreground and log to
+.Em stderr .
+.It Fl f Ar file
+Specify an alternative configuration file.
+.It Fl n
+Configtest mode.
+Only check the configuration file for validity.
+.It Fl s Ar socket
+Use
+.Ar socket
+instead of the path given in the configuration file to communicate with
+.Xr {{ctl_name}} 8 .
+.It Fl v
+Produce more verbose output.
+Once enables debug messages, twice enables trace messages.
+.El
+.Pp
+When
+.Cm user
+is set in the configuration file,
+.Nm
+must be started as root: the control socket is created, handed to that
+user, and privileges are dropped before the main loop starts.
+.Pp
+.Nm
+refuses to start when another instance answers on the control socket.
+A stale socket left by a crashed instance is removed.
+.Pp
+The following signals are handled:
+.Bl -tag -width SIGTERM
+.It Dv SIGHUP
+Reload the configuration file.
+On error the running configuration is kept.
+Changes to
+.Cm socket
+and
+.Cm user
+take effect only after a restart.
+.It Dv SIGTERM , Dv SIGINT
+Terminate.
+.El
+.Sh FILES
+.Bl -tag -width /var/run/{{daemon_name}}.sock -compact
+.It Pa /etc/{{daemon_name}}.conf
+Default configuration file.
+.It Pa /var/run/{{daemon_name}}.sock
+Default control socket.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+Check the configuration file:
+.Pp
+.Dl # {{daemon_name}} -n
+.Pp
+Run in the foreground with debug output on a private socket:
+.Pp
+.Dl $ {{daemon_name}} -dv -s /tmp/{{daemon_name}}.sock -f {{daemon_name}}.conf
+.Sh SEE ALSO
+.Xr {{daemon_name}}.conf 5 ,
+.Xr {{ctl_name}} 8
+.Sh AUTHORS
+.An {{author_name}} Aq Mt {{author_email}}

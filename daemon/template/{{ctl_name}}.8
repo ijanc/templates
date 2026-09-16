@@ -1,0 +1,58 @@
+.\" SPDX-License-Identifier: ISC
+.\" SPDX-FileCopyrightText: {{year}} {{authors}}
+.Dd $Mdocdate: {{mdocdate}} $
+.Dt {{ctl_name | upcase}} 8
+.Os
+.Sh NAME
+.Nm {{ctl_name}}
+.Nd control the {{daemon_name}} daemon
+.Sh SYNOPSIS
+.Nm {{ctl_name}}
+.Op Fl s Ar socket
+.Ar command
+.Op Ar argument ...
+.Sh DESCRIPTION
+The
+.Nm
+program controls the
+.Xr {{daemon_name}} 8
+daemon.
+Commands may be abbreviated to the shortest unique prefix.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl s Ar socket
+Use
+.Ar socket
+instead of the default
+.Pa /var/run/{{daemon_name}}.sock
+to communicate with
+.Xr {{daemon_name}} 8 .
+.El
+.Pp
+The commands are as follows:
+.Bl -tag -width Ds
+.It Cm log brief
+Disable debug logging.
+.It Cm log verbose
+Enable debug logging.
+.It Cm reload
+Reload the configuration file.
+.It Cm show status
+Show process id, uptime, logging state, reload count and the running
+configuration.
+.It Cm stop
+Terminate the daemon.
+.El
+.Sh FILES
+.Bl -tag -width /var/run/{{daemon_name}}.sock -compact
+.It Pa /var/run/{{daemon_name}}.sock
+Default control socket.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh SEE ALSO
+.Xr {{daemon_name}}.conf 5 ,
+.Xr {{daemon_name}} 8
+.Sh AUTHORS
+.An {{author_name}} Aq Mt {{author_email}}

@@ -1,0 +1,30 @@
+[private]
+default:
+    @just --list
+
+alias ck := check
+
+# Check formatting, spelling, licenses and man pages
+check:
+    dprint check
+    typos
+    cargo deny check licenses
+    mandoc -Tlint -Werror daemon-generatedd.8 daemon-generatedctl.8 daemon-generatedd.conf.5
+
+# Fix formatting and spelling
+fmt:
+    dprint fmt
+    typos --write-changes
+
+# Install binaries and man pages under PREFIX (default /usr/local)
+install PREFIX="/usr/local":
+    cargo build --release
+    install -Dm755 target/release/daemon-generatedd {{PREFIX}}/sbin/daemon-generatedd
+    install -Dm755 target/release/daemon-generatedctl {{PREFIX}}/sbin/daemon-generatedctl
+    install -Dm644 daemon-generatedd.8 {{PREFIX}}/share/man/man8/daemon-generatedd.8
+    install -Dm644 daemon-generatedctl.8 {{PREFIX}}/share/man/man8/daemon-generatedctl.8
+    install -Dm644 daemon-generatedd.conf.5 {{PREFIX}}/share/man/man5/daemon-generatedd.conf.5
+
+# Generate the security PGP key and record it in SECURITY.md
+security-key:
+    sh contrib/gen-security-key.sh

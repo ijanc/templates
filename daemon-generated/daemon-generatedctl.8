@@ -1,0 +1,58 @@
+.\" SPDX-License-Identifier: ISC
+.\" SPDX-FileCopyrightText: 2026 your name <author@example.com>
+.Dd $Mdocdate: September 16 2026 $
+.Dt DAEMON-GENERATEDCTL 8
+.Os
+.Sh NAME
+.Nm daemon-generatedctl
+.Nd control the daemon-generatedd daemon
+.Sh SYNOPSIS
+.Nm daemon-generatedctl
+.Op Fl s Ar socket
+.Ar command
+.Op Ar argument ...
+.Sh DESCRIPTION
+The
+.Nm
+program controls the
+.Xr daemon-generatedd 8
+daemon.
+Commands may be abbreviated to the shortest unique prefix.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl s Ar socket
+Use
+.Ar socket
+instead of the default
+.Pa /var/run/daemon-generatedd.sock
+to communicate with
+.Xr daemon-generatedd 8 .
+.El
+.Pp
+The commands are as follows:
+.Bl -tag -width Ds
+.It Cm log brief
+Disable debug logging.
+.It Cm log verbose
+Enable debug logging.
+.It Cm reload
+Reload the configuration file.
+.It Cm show status
+Show process id, uptime, logging state, reload count and the running
+configuration.
+.It Cm stop
+Terminate the daemon.
+.El
+.Sh FILES
+.Bl -tag -width /var/run/daemon-generatedd.sock -compact
+.It Pa /var/run/daemon-generatedd.sock
+Default control socket.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh SEE ALSO
+.Xr daemon-generatedd.conf 5 ,
+.Xr daemon-generatedd 8
+.Sh AUTHORS
+.An your name Aq Mt author@example.com

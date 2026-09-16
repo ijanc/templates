@@ -1,0 +1,55 @@
+.\" SPDX-License-Identifier: ISC
+.\" SPDX-FileCopyrightText: 2026 your name <author@example.com>
+.Dd $Mdocdate: September 16 2026 $
+.Dt DAEMON-GENERATEDD.CONF 5
+.Os
+.Sh NAME
+.Nm daemon-generatedd.conf
+.Nd daemon-generatedd configuration file
+.Sh DESCRIPTION
+.Xr daemon-generatedd 8
+reads its configuration from
+.Pa /etc/daemon-generatedd.conf ,
+or the file given with
+.Fl f .
+A missing default file is treated as empty; a missing file given with
+.Fl f
+is an error.
+The file is TOML.
+Unknown keys are rejected.
+All keys are optional.
+.Sh SETTINGS
+.Bl -tag -width Ds
+.It Cm socket No = Ar path
+Control socket, overridden by
+.Fl s .
+Must be absolute.
+Default:
+.Pa /var/run/daemon-generatedd.sock .
+.It Cm user No = Ar string
+Run as this user after the control socket is created.
+.Xr daemon-generatedd 8
+must then be started as root.
+The socket is owned by this user, mode 0660.
+Default: unset, run as the invoking user.
+.It Cm interval No = Ar integer
+Seconds between runs of the periodic task.
+Must be at least 1.
+Default: 60.
+.El
+.Sh FILES
+.Bl -tag -width /etc/daemon-generatedd.conf -compact
+.It Pa /etc/daemon-generatedd.conf
+Default location.
+.El
+.Sh EXAMPLES
+.Bd -literal -offset indent
+socket = "/var/run/daemon-generatedd.sock"
+user = "_daemon_generated"
+interval = 30
+.Ed
+.Sh SEE ALSO
+.Xr daemon-generatedd 8 ,
+.Xr daemon-generatedctl 8
+.Sh AUTHORS
+.An your name Aq Mt author@example.com

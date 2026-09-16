@@ -1,0 +1,17 @@
+#!/bin/ksh
+#
+# $OpenBSD$
+
+daemon="/usr/local/sbin/daemon-generatedd"
+
+. /etc/rc.d/rc.subr
+
+rc_configtest() {
+	${daemon} -n ${daemon_flags}
+}
+
+rc_reload() {
+	/usr/local/sbin/daemon-generatedctl reload
+}
+
+rc_cmd $1

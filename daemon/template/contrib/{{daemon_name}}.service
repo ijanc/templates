@@ -1,0 +1,14 @@
+[Unit]
+Description={{daemon_name}} daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/local/sbin/{{daemon_name}} -n
+ExecStart=/usr/local/sbin/{{daemon_name}} -d
+ExecReload=/usr/local/sbin/{{ctl_name}} reload
+RuntimeDirectory={{daemon_name}}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

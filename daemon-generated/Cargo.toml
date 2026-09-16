@@ -1,0 +1,31 @@
+[package]
+name = "daemon-generated"
+version = "0.1.0"
+authors = ["your name <author@example.com>"]
+edition = "2024"
+license = "ISC"
+repository = "https://github.com/ijanc/daemon-generated"
+description = "An example generated using the daemon template"
+
+[dependencies]
+anyhow = "1.0.104"
+getopt = "1.1.9"
+libc = "0.2"
+log = { version = "0.4.34", features = ["std"] }
+postcard = { version = "1", default-features = false, features = ["use-std"] }
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.6"
+
+[lib]
+name = "daemon_generated"
+path = "src/lib.rs"
+
+[[bin]]
+doc = false
+name = "daemon-generatedd"
+path = "src/bin/daemon-generatedd.rs"
+
+[[bin]]
+doc = false
+name = "daemon-generatedctl"
+path = "src/bin/daemon-generatedctl.rs"

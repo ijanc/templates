@@ -1,0 +1,31 @@
+[package]
+name = "{{project-name}}"
+version = "0.1.0"
+authors = ["{{authors}}"]
+edition = "2024"
+license = "ISC"
+repository = "https://github.com/{{gh-username}}/{{project-name}}"
+description = "{{project-description}}"
+
+[dependencies]
+anyhow = "1.0.104"
+getopt = "1.1.9"
+libc = "0.2"
+log = { version = "0.4.34", features = ["std"] }
+postcard = { version = "1", default-features = false, features = ["use-std"] }
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.6"
+
+[lib]
+name = "{{crate_name}}"
+path = "src/lib.rs"
+
+[[bin]]
+doc = false
+name = "{{daemon_name}}"
+path = "src/bin/{{daemon_name}}.rs"
+
+[[bin]]
+doc = false
+name = "{{ctl_name}}"
+path = "src/bin/{{ctl_name}}.rs"

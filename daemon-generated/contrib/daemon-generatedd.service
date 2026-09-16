@@ -1,0 +1,14 @@
+[Unit]
+Description=daemon-generatedd daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/local/sbin/daemon-generatedd -n
+ExecStart=/usr/local/sbin/daemon-generatedd -d
+ExecReload=/usr/local/sbin/daemon-generatedctl reload
+RuntimeDirectory=daemon-generatedd
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

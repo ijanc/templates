@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  generate:
+    name: Generate ${{ matrix.template }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - template: daemon
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org
+    env:
+      PROJECT_NAME: ${{ matrix.template }}-generated
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cargo-generate/cargo-generate-action@v0.20.0
+        with:
+          name: ${{ env.PROJECT_NAME }}
+          template: ${{ matrix.template }}
+          arguments: ${{ matrix.arguments }}
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2026-09-13
+          components: clippy
+      - run: sudo apt-get install -y --no-install-recommends mandoc
+      # Move the generated project out of the template repository, otherwise
+      # cargo picks up the workspace: https://github.com/rust-lang/cargo/issues/9922
+      - run: |
+          mv ${{ env.PROJECT_NAME }} ${{ runner.temp }}/
+          cd ${{ runner.temp }}/${{ env.PROJECT_NAME }}
+          cargo clippy --all-targets
+          cargo test
+          mandoc -Tlint -Werror *.8 *.5

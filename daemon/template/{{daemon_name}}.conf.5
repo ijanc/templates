@@ -1,0 +1,55 @@
+.\" SPDX-License-Identifier: ISC
+.\" SPDX-FileCopyrightText: {{year}} {{authors}}
+.Dd $Mdocdate: {{mdocdate}} $
+.Dt {{daemon_name | upcase}}.CONF 5
+.Os
+.Sh NAME
+.Nm {{daemon_name}}.conf
+.Nd {{daemon_name}} configuration file
+.Sh DESCRIPTION
+.Xr {{daemon_name}} 8
+reads its configuration from
+.Pa /etc/{{daemon_name}}.conf ,
+or the file given with
+.Fl f .
+A missing default file is treated as empty; a missing file given with
+.Fl f
+is an error.
+The file is TOML.
+Unknown keys are rejected.
+All keys are optional.
+.Sh SETTINGS
+.Bl -tag -width Ds
+.It Cm socket No = Ar path
+Control socket, overridden by
+.Fl s .
+Must be absolute.
+Default:
+.Pa /var/run/{{daemon_name}}.sock .
+.It Cm user No = Ar string
+Run as this user after the control socket is created.
+.Xr {{daemon_name}} 8
+must then be started as root.
+The socket is owned by this user, mode 0660.
+Default: unset, run as the invoking user.
+.It Cm interval No = Ar integer
+Seconds between runs of the periodic task.
+Must be at least 1.
+Default: 60.
+.El
+.Sh FILES
+.Bl -tag -width /etc/{{daemon_name}}.conf -compact
+.It Pa /etc/{{daemon_name}}.conf
+Default location.
+.El
+.Sh EXAMPLES
+.Bd -literal -offset indent
+socket = "/var/run/{{daemon_name}}.sock"
+user = "_{{crate_name}}"
+interval = 30
+.Ed
+.Sh SEE ALSO
+.Xr {{daemon_name}} 8 ,
+.Xr {{ctl_name}} 8
+.Sh AUTHORS
+.An {{author_name}} Aq Mt {{author_email}}

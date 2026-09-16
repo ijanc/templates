@@ -1,0 +1,3 @@
+[workspace]
+members = ["*-generated"]
+resolver = "2"

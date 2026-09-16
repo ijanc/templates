@@ -1,0 +1,91 @@
+.\" SPDX-License-Identifier: ISC
+.\" SPDX-FileCopyrightText: 2026 your name <author@example.com>
+.Dd $Mdocdate: September 16 2026 $
+.Dt DAEMON-GENERATEDD 8
+.Os
+.Sh NAME
+.Nm daemon-generatedd
+.Nd example daemon
+.Sh SYNOPSIS
+.Nm daemon-generatedd
+.Op Fl dnv
+.Op Fl f Ar file
+.Op Fl s Ar socket
+.Sh DESCRIPTION
+.Nm
+is a template daemon.
+It detaches from the terminal, logs to
+.Xr syslogd 8 ,
+listens on a control socket for
+.Xr daemon-generatedctl 8
+and runs a periodic task.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl d
+Do not daemonize.
+If this option is specified,
+.Nm
+will run in the foreground and log to
+.Em stderr .
+.It Fl f Ar file
+Specify an alternative configuration file.
+.It Fl n
+Configtest mode.
+Only check the configuration file for validity.
+.It Fl s Ar socket
+Use
+.Ar socket
+instead of the path given in the configuration file to communicate with
+.Xr daemon-generatedctl 8 .
+.It Fl v
+Produce more verbose output.
+Once enables debug messages, twice enables trace messages.
+.El
+.Pp
+When
+.Cm user
+is set in the configuration file,
+.Nm
+must be started as root: the control socket is created, handed to that
+user, and privileges are dropped before the main loop starts.
+.Pp
+.Nm
+refuses to start when another instance answers on the control socket.
+A stale socket left by a crashed instance is removed.
+.Pp
+The following signals are handled:
+.Bl -tag -width SIGTERM
+.It Dv SIGHUP
+Reload the configuration file.
+On error the running configuration is kept.
+Changes to
+.Cm socket
+and
+.Cm user
+take effect only after a restart.
+.It Dv SIGTERM , Dv SIGINT
+Terminate.
+.El
+.Sh FILES
+.Bl -tag -width /var/run/daemon-generatedd.sock -compact
+.It Pa /etc/daemon-generatedd.conf
+Default configuration file.
+.It Pa /var/run/daemon-generatedd.sock
+Default control socket.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+Check the configuration file:
+.Pp
+.Dl # daemon-generatedd -n
+.Pp
+Run in the foreground with debug output on a private socket:
+.Pp
+.Dl $ daemon-generatedd -dv -s /tmp/daemon-generatedd.sock -f daemon-generatedd.conf
+.Sh SEE ALSO
+.Xr daemon-generatedd.conf 5 ,
+.Xr daemon-generatedctl 8
+.Sh AUTHORS
+.An your name Aq Mt author@example.com
