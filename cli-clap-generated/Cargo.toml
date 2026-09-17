@@ -1,0 +1,24 @@
+[package]
+name = "cli-clap-generated"
+version = "0.1.0"
+authors = ["your name <author@example.com>"]
+edition = "2024"
+license = "ISC"
+repository = "https://github.com/ijanc/cli-clap-generated"
+description = "An example generated using the cli template"
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.5", features = ["derive"] }
+env_logger = "0.11"
+libc = "0.2"
+log = "0.4.34"
+
+[lib]
+name = "cli_clap_generated"
+path = "src/lib.rs"
+
+[[bin]]
+doc = false
+name = "cli-clap-generated"
+path = "src/main.rs"

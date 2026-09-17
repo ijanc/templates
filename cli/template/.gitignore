@@ -1,0 +1,4 @@
+/target
+{%- if dotenv %}
+/.env
+{%- endif %}

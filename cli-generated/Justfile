@@ -1,0 +1,28 @@
+[private]
+default:
+    @just --list
+
+alias ck := check
+
+# Check formatting, spelling, licenses and man pages
+check:
+    dprint check
+    typos
+    cargo deny check licenses
+    mandoc -Tlint -Werror cli-generated.1 cli-generated.conf.5
+
+# Fix formatting and spelling
+fmt:
+    dprint fmt
+    typos --write-changes
+
+# Install the binary and man pages under PREFIX (default /usr/local)
+install PREFIX="/usr/local":
+    cargo build --release
+    install -Dm755 target/release/cli-generated {{PREFIX}}/bin/cli-generated
+    install -Dm644 cli-generated.1 {{PREFIX}}/share/man/man1/cli-generated.1
+    install -Dm644 cli-generated.conf.5 {{PREFIX}}/share/man/man5/cli-generated.conf.5
+
+# Generate the security PGP key and record it in SECURITY.md
+security-key:
+    sh contrib/gen-security-key.sh

@@ -1,0 +1,27 @@
+[package]
+name = "cli-generated"
+version = "0.1.0"
+authors = ["your name <author@example.com>"]
+edition = "2024"
+license = "ISC"
+repository = "https://github.com/ijanc/cli-generated"
+description = "An example generated using the cli template"
+
+[dependencies]
+anyhow = "1.0.104"
+dotenvy = "0.15"
+env_logger = "0.11"
+getopt = "1.1.9"
+libc = "0.2"
+log = "0.4.34"
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.6"
+
+[lib]
+name = "cli_generated"
+path = "src/lib.rs"
+
+[[bin]]
+doc = false
+name = "cli-generated"
+path = "src/main.rs"

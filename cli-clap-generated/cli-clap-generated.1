@@ -1,0 +1,54 @@
+.\" SPDX-License-Identifier: ISC
+.\" SPDX-FileCopyrightText: 2026 your name <author@example.com>
+.Dd $Mdocdate: September 17 2026 $
+.Dt CLI-CLAP-GENERATED 1
+.Os
+.Sh NAME
+.Nm cli-clap-generated
+.Nd an example generated using the cli template
+.Sh SYNOPSIS
+.Nm cli-clap-generated
+.Op Fl hVv
+.Op Ar arg ...
+.Sh DESCRIPTION
+.Nm
+is a template command line tool.
+It logs to
+.Em stderr
+and prints a greeting to
+.Em stdout .
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl h , Fl -help
+Print usage and exit.
+.It Fl V , Fl -version
+Print the version, git hash and build date, then exit.
+.It Fl v , Fl -verbose
+Produce more verbose output.
+Once enables debug messages, twice enables trace messages.
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width CLI_CLAP_GENERATED_LOG
+.It Ev CLI_CLAP_GENERATED_LOG
+Log filter in
+.Sy env_logger
+syntax, for example
+.Ql debug
+or
+.Ql cli_clap_generated=trace .
+Takes precedence over
+.Fl v .
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+Print the version:
+.Pp
+.Dl $ cli-clap-generated -V
+.Pp
+Run with trace output:
+.Pp
+.Dl $ cli-clap-generated -vv foo bar
+.Sh AUTHORS
+.An your name Aq Mt author@example.com

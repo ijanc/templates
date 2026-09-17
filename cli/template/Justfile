@@ -1,0 +1,30 @@
+[private]
+default:
+    @just --list
+
+alias ck := check
+
+# Check formatting, spelling, licenses and man pages
+check:
+    dprint check
+    typos
+    cargo deny check licenses
+    mandoc -Tlint -Werror {{project-name}}.1{% if config %} {{project-name}}.conf.5{% endif %}
+
+# Fix formatting and spelling
+fmt:
+    dprint fmt
+    typos --write-changes
+
+# Install the binary and man pages under PREFIX (default /usr/local)
+install PREFIX="/usr/local":
+    cargo build --release
+    install -Dm755 target/release/{{project-name}} {% raw %}{{PREFIX}}{% endraw %}/bin/{{project-name}}
+    install -Dm644 {{project-name}}.1 {% raw %}{{PREFIX}}{% endraw %}/share/man/man1/{{project-name}}.1
+{%- if config %}
+    install -Dm644 {{project-name}}.conf.5 {% raw %}{{PREFIX}}{% endraw %}/share/man/man5/{{project-name}}.conf.5
+{%- endif %}
+
+# Generate the security PGP key and record it in SECURITY.md
+security-key:
+    sh contrib/gen-security-key.sh

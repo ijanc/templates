@@ -1,0 +1,86 @@
+.\" SPDX-License-Identifier: ISC
+.\" SPDX-FileCopyrightText: {{year}} {{authors}}
+.Dd $Mdocdate: {{mdocdate}} $
+.Dt {{project-name | upcase}} 1
+.Os
+.Sh NAME
+.Nm {{project-name}}
+.Nd {{project-description | downcase}}
+.Sh SYNOPSIS
+.Nm {{project-name}}
+.Op Fl hVv
+{%- if config %}
+.Op Fl f Ar file
+{%- endif %}
+.Op Ar arg ...
+.Sh DESCRIPTION
+.Nm
+is a template command line tool.
+It logs to
+.Em stderr
+and prints a greeting to
+.Em stdout .
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+{%- if config %}
+.It Fl f Ar file{% if args == "clap" %} , Fl -file Ar file{% endif %}
+Specify an alternative configuration file.
+{%- endif %}
+.It Fl h{% if args == "clap" %} , Fl -help{% endif %}
+Print usage and exit.
+.It Fl V{% if args == "clap" %} , Fl -version{% endif %}
+Print the version, git hash and build date, then exit.
+.It Fl v{% if args == "clap" %} , Fl -verbose{% endif %}
+Produce more verbose output.
+Once enables debug messages, twice enables trace messages.
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width {{env_prefix}}_LOG
+.It Ev {{env_prefix}}_LOG
+Log filter in
+.Sy env_logger
+syntax, for example
+.Ql debug
+or
+.Ql {{crate_name}}=trace .
+Takes precedence over
+.Fl v .
+{%- if config %}
+.It Ev XDG_CONFIG_HOME
+Base directory of the default configuration file.
+Defaults to
+.Pa ~/.config .
+{%- endif %}
+.El
+{%- if dotenv or config %}
+.Sh FILES
+.Bl -tag -width ~/.config/{{project-name}}/config.toml -compact
+{%- if config %}
+.It Pa ~/.config/{{project-name}}/config.toml
+Default configuration file, see
+.Xr {{project-name}}.conf 5 .
+{%- endif %}
+{%- if dotenv %}
+.It Pa .env
+Environment variables loaded from the current directory at startup.
+Variables already set in the environment are not overridden.
+{%- endif %}
+.El
+{%- endif %}
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+Print the version:
+.Pp
+.Dl $ {{project-name}} -V
+.Pp
+Run with trace output:
+.Pp
+.Dl $ {{project-name}} -vv foo bar
+{%- if config %}
+.Sh SEE ALSO
+.Xr {{project-name}}.conf 5
+{%- endif %}
+.Sh AUTHORS
+.An {{author_name}} Aq Mt {{author_email}}

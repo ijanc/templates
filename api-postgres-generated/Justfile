@@ -1,0 +1,74 @@
+[private]
+default:
+    @just --list
+
+alias ck := check
+
+# Check formatting, spelling and licenses
+check:
+    dprint check
+    typos
+    cargo deny check licenses
+
+# Fix formatting and spelling
+fmt:
+    dprint fmt
+    typos --write-changes
+
+# Build the release binary
+build:
+    cargo build --release
+
+# Run locally, reading .env
+run:
+    cargo run
+
+# Run unit and integration tests
+test:
+    cargo test
+
+# Build the image for one platform and load it into the local daemon
+docker-build PLATFORM="linux/amd64" TAG="api-postgres-generated:latest":
+    docker buildx build --platform {{PLATFORM}} --load -t {{TAG}} .
+
+# Build amd64 and arm64 images and push them
+docker-buildx TAG:
+    docker buildx build --platform linux/amd64,linux/arm64 --push -t {{TAG}} .
+
+# Run the image built by docker-build
+docker-run TAG="api-postgres-generated:latest":
+    docker run --rm -p 8080:8080 --env-file .env -e API_POSTGRES_GENERATED_ADDR=0.0.0.0:8080 {{TAG}}
+
+# Start app, database and prometheus with docker compose
+up:
+    docker compose up --build --detach
+
+# Stop and remove the compose services
+down:
+    docker compose down
+
+# Migrations need sqlx-cli: cargo install sqlx-cli --no-default-features --features postgres
+
+# Create migrations/<timestamp>_NAME.{up,down}.sql
+migrate-add NAME:
+    sqlx migrate add -r {{NAME}}
+
+# Apply pending migrations to DATABASE_URL
+migrate-run:
+    sqlx migrate run
+
+# Revert the last migration
+migrate-revert:
+    sqlx migrate revert
+
+# Drop, recreate and migrate the database
+db-reset:
+    sqlx database reset -y
+
+# Print the OpenAPI document of a running server
+openapi ADDR="127.0.0.1:8080":
+    curl -fsS http://{{ADDR}}/api-docs/openapi.json
+
+# Generate the security PGP key and record it in SECURITY.md
+security-key:
+    sh contrib/gen-security-key.sh

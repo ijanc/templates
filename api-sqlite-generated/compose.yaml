@@ -1,0 +1,20 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      API_SQLITE_GENERATED_ADDR: 0.0.0.0:8080
+      DATABASE_URL: sqlite:///data/api-sqlite-generated.db?mode=rwc
+    volumes:
+      - ./data:/data
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./contrib/prometheus.yml:/etc/prometheus/prometheus.yml:ro

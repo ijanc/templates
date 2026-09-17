@@ -1,0 +1,46 @@
+.\" SPDX-License-Identifier: ISC
+.\" SPDX-FileCopyrightText: 2026 your name <author@example.com>
+.Dd $Mdocdate: September 17 2026 $
+.Dt CLI-GENERATED.CONF 5
+.Os
+.Sh NAME
+.Nm cli-generated.conf
+.Nd cli-generated configuration file
+.Sh DESCRIPTION
+.Xr cli-generated 1
+reads its configuration from
+.Pa $XDG_CONFIG_HOME/cli-generated/config.toml ,
+or the file given with
+.Fl f .
+A missing default file is treated as empty; a missing file given with
+.Fl f
+is an error.
+The file is TOML.
+Unknown keys are rejected.
+All keys are optional.
+.Sh SETTINGS
+.Bl -tag -width Ds
+.It Cm name No = Ar string
+Name used in the greeting.
+Must not be empty.
+Default:
+.Ql world .
+.It Cm retries No = Ar integer
+Example numeric setting.
+Must be at most 10.
+Default: 3.
+.El
+.Sh FILES
+.Bl -tag -width ~/.config/cli-generated/config.toml -compact
+.It Pa ~/.config/cli-generated/config.toml
+Default location.
+.El
+.Sh EXAMPLES
+.Bd -literal -offset indent
+name = "there"
+retries = 5
+.Ed
+.Sh SEE ALSO
+.Xr cli-generated 1
+.Sh AUTHORS
+.An your name Aq Mt author@example.com

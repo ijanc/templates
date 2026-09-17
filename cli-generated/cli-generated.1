@@ -1,0 +1,72 @@
+.\" SPDX-License-Identifier: ISC
+.\" SPDX-FileCopyrightText: 2026 your name <author@example.com>
+.Dd $Mdocdate: September 17 2026 $
+.Dt CLI-GENERATED 1
+.Os
+.Sh NAME
+.Nm cli-generated
+.Nd an example generated using the cli template
+.Sh SYNOPSIS
+.Nm cli-generated
+.Op Fl hVv
+.Op Fl f Ar file
+.Op Ar arg ...
+.Sh DESCRIPTION
+.Nm
+is a template command line tool.
+It logs to
+.Em stderr
+and prints a greeting to
+.Em stdout .
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl f Ar file
+Specify an alternative configuration file.
+.It Fl h
+Print usage and exit.
+.It Fl V
+Print the version, git hash and build date, then exit.
+.It Fl v
+Produce more verbose output.
+Once enables debug messages, twice enables trace messages.
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width CLI_GENERATED_LOG
+.It Ev CLI_GENERATED_LOG
+Log filter in
+.Sy env_logger
+syntax, for example
+.Ql debug
+or
+.Ql cli_generated=trace .
+Takes precedence over
+.Fl v .
+.It Ev XDG_CONFIG_HOME
+Base directory of the default configuration file.
+Defaults to
+.Pa ~/.config .
+.El
+.Sh FILES
+.Bl -tag -width ~/.config/cli-generated/config.toml -compact
+.It Pa ~/.config/cli-generated/config.toml
+Default configuration file, see
+.Xr cli-generated.conf 5 .
+.It Pa .env
+Environment variables loaded from the current directory at startup.
+Variables already set in the environment are not overridden.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+Print the version:
+.Pp
+.Dl $ cli-generated -V
+.Pp
+Run with trace output:
+.Pp
+.Dl $ cli-generated -vv foo bar
+.Sh SEE ALSO
+.Xr cli-generated.conf 5
+.Sh AUTHORS
+.An your name Aq Mt author@example.com

@@ -1,0 +1,36 @@
+[package]
+name = "{{project-name}}"
+version = "0.1.0"
+authors = ["{{authors}}"]
+edition = "2024"
+license = "ISC"
+repository = "https://github.com/{{gh-username}}/{{project-name}}"
+description = "{{project-description}}"
+
+[dependencies]
+anyhow = "1.0.104"
+{%- if args == "clap" %}
+clap = { version = "4.5", features = ["derive"] }
+{%- endif %}
+{%- if dotenv %}
+dotenvy = "0.15"
+{%- endif %}
+env_logger = "0.11"
+{%- if args == "getopt" %}
+getopt = "1.1.9"
+{%- endif %}
+libc = "0.2"
+log = "0.4.34"
+{%- if config %}
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.6"
+{%- endif %}
+
+[lib]
+name = "{{crate_name}}"
+path = "src/lib.rs"
+
+[[bin]]
+doc = false
+name = "{{project-name}}"
+path = "src/main.rs"

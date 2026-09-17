@@ -1,0 +1,46 @@
+.\" SPDX-License-Identifier: ISC
+.\" SPDX-FileCopyrightText: {{year}} {{authors}}
+.Dd $Mdocdate: {{mdocdate}} $
+.Dt {{project-name | upcase}}.CONF 5
+.Os
+.Sh NAME
+.Nm {{project-name}}.conf
+.Nd {{project-name}} configuration file
+.Sh DESCRIPTION
+.Xr {{project-name}} 1
+reads its configuration from
+.Pa $XDG_CONFIG_HOME/{{project-name}}/config.toml ,
+or the file given with
+.Fl f .
+A missing default file is treated as empty; a missing file given with
+.Fl f
+is an error.
+The file is TOML.
+Unknown keys are rejected.
+All keys are optional.
+.Sh SETTINGS
+.Bl -tag -width Ds
+.It Cm name No = Ar string
+Name used in the greeting.
+Must not be empty.
+Default:
+.Ql world .
+.It Cm retries No = Ar integer
+Example numeric setting.
+Must be at most 10.
+Default: 3.
+.El
+.Sh FILES
+.Bl -tag -width ~/.config/{{project-name}}/config.toml -compact
+.It Pa ~/.config/{{project-name}}/config.toml
+Default location.
+.El
+.Sh EXAMPLES
+.Bd -literal -offset indent
+name = "there"
+retries = 5
+.Ed
+.Sh SEE ALSO
+.Xr {{project-name}} 1
+.Sh AUTHORS
+.An {{author_name}} Aq Mt {{author_email}}

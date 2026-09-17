@@ -14,16 +14,47 @@ env:
 
 jobs:
   generate:
-    name: Generate ${{ matrix.template }}
+    name: Generate ${{ matrix.name }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
           - template: daemon
+            name: daemon-generated
             arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org
+          - template: cli
+            name: cli-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define args=getopt --define config=true --define dotenv=true
+          - template: cli
+            name: cli-clap-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define args=clap --define config=false --define dotenv=false
+          - template: api
+            name: api-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=memory
+          - template: api
+            name: api-sqlite-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=sqlite --define cache=true
+          - template: api
+            name: api-postgres-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=postgres --define cache=false
+            database_url: postgres://postgres:postgres@localhost:5432/postgres
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     env:
-      PROJECT_NAME: ${{ matrix.template }}-generated
+      PROJECT_NAME: ${{ matrix.name }}
+      # Empty for every variant but api-postgres; its tests skip without it.
+      DATABASE_URL: ${{ matrix.database_url }}
     steps:
       - uses: actions/checkout@v7
       - uses: cargo-generate/cargo-generate-action@v0.20.0
@@ -43,4 +74,4 @@ jobs:
           cd ${{ runner.temp }}/${{ env.PROJECT_NAME }}
           cargo clippy --all-targets
           cargo test
-          mandoc -Tlint -Werror *.8 *.5
+          if ls *.[1-8] >/dev/null 2>&1; then mandoc -Tlint -Werror *.[1-8]; fi

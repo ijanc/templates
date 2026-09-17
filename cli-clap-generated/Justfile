@@ -1,0 +1,27 @@
+[private]
+default:
+    @just --list
+
+alias ck := check
+
+# Check formatting, spelling, licenses and man pages
+check:
+    dprint check
+    typos
+    cargo deny check licenses
+    mandoc -Tlint -Werror cli-clap-generated.1
+
+# Fix formatting and spelling
+fmt:
+    dprint fmt
+    typos --write-changes
+
+# Install the binary and man pages under PREFIX (default /usr/local)
+install PREFIX="/usr/local":
+    cargo build --release
+    install -Dm755 target/release/cli-clap-generated {{PREFIX}}/bin/cli-clap-generated
+    install -Dm644 cli-clap-generated.1 {{PREFIX}}/share/man/man1/cli-clap-generated.1
+
+# Generate the security PGP key and record it in SECURITY.md
+security-key:
+    sh contrib/gen-security-key.sh
