@@ -1,0 +1,8 @@
+{% if flash %}
+  {% set kind = "danger" if flash.level == "error" else flash.level %}
+  <div class="alert alert-{{ kind }} alert-dismissible fade show" role="alert">
+    {{ flash.message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"
+            aria-label="Dismiss"></button>
+  </div>
+{% endif %}

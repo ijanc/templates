@@ -1,0 +1,9 @@
+target
+node_modules
+static/css
+static/js
+.env
+.git
+*.db
+*.db-*
+data

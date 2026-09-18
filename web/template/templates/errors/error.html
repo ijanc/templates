@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}{{ status }} {{ reason }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+  <div class="py-5 text-center">
+    <p class="display-1 mb-0">{{ status }}</p>
+    <h1 class="h3 mt-2">{% block heading %}{{ reason }}{% endblock %}</h1>
+    <p class="text-body-secondary">
+      {% block detail %}{{ detail }}{% endblock %}
+    </p>
+    <a class="btn btn-primary" href="/items">Back to items</a>
+    {% if request_id %}
+      <p class="mt-4 mb-0">
+        <small class="text-body-secondary">Request {{ request_id }}</small>
+      </p>
+    {% endif %}
+  </div>
+{% endblock %}

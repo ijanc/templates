@@ -2,4 +2,4 @@
 
 [template]
 cargo_generate_version = ">=0.21.1"
-sub_templates = ["daemon", "cli", "api"]
+sub_templates = ["daemon", "cli", "api", "web"]

@@ -1,0 +1,18 @@
+[licenses]
+allow = [
+  "Apache-2.0",
+  "BSD-3-Clause",
+  # notify, through minijinja-autoreload
+  "CC0-1.0",
+{%- if store == "postgres" or auth == "google" %}
+  # webpki-roots, through rustls
+  "CDLA-Permissive-2.0",
+{%- endif %}
+  "ISC",
+  "MIT",
+{%- if auth == "google" %}
+  "MPL-2.0",
+{%- endif %}
+  "Unicode-3.0",
+  "Zlib",
+]

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-3">{{ title }}</h1>
+
+  <form method="post" action="{{ action }}" novalidate class="col-lg-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div class="mb-3">
+      <label for="name" class="form-label">Name</label>
+      <input type="text" id="name" name="name" maxlength="200" required
+             value="{{ form.name or '' }}"
+             class="form-control{% if errors.name %} is-invalid{% endif %}">
+      {% for message in errors.name or [] %}
+        <div class="invalid-feedback">{{ message }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="mb-3">
+      <label for="description" class="form-label">Description</label>
+      <textarea id="description" name="description" rows="4"
+                class="form-control{% if errors.description %} is-invalid{% endif %}"
+      >{{ form.description or "" }}</textarea>
+      {% for message in errors.description or [] %}
+        <div class="invalid-feedback">{{ message }}</div>
+      {% endfor %}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a class="btn btn-link"
+       href="{% if item %}/items/{{ item.id }}{% else %}/items{% endif %}">
+      Cancel
+    </a>
+  </form>
+{% endblock %}

@@ -1,0 +1,10 @@
+/target
+/.env
+/node_modules
+/static/css
+/static/js
+{%- if store == "sqlite" %}
+/*.db
+/*.db-*
+/data
+{%- endif %}

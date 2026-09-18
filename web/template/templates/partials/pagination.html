@@ -1,0 +1,24 @@
+{% if prev is not none or next is not none %}
+  <nav aria-label="Pages">
+    <ul class="pagination">
+      <li class="page-item{% if prev is none %} disabled{% endif %}">
+        <a class="page-link"
+           href="/items?limit={{ page.limit }}&offset={{ prev or 0 }}">
+          Previous
+        </a>
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link">
+          {{ page.offset + 1 }}-{{ page.offset + page.items|length }}
+          of {{ page.total }}
+        </span>
+      </li>
+      <li class="page-item{% if next is none %} disabled{% endif %}">
+        <a class="page-link"
+           href="/items?limit={{ page.limit }}&offset={{ next or 0 }}">
+          Next
+        </a>
+      </li>
+    </ul>
+  </nav>
+{% endif %}

@@ -10,6 +10,7 @@ generate-all:
     just generate-api
     just generate-api-sqlite
     just generate-api-postgres
+    just generate-web
 
 # Regenerate daemon-generated from ./daemon
 generate-daemon $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
@@ -75,6 +76,17 @@ generate-api-postgres $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
         --define domain=example.org \
         --define store=postgres \
         --define cache=false
+
+# Regenerate web-generated from ./web (sqlx, SQLite, password login)
+generate-web $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
+    rm -rf web-generated
+    cargo generate --path ./web \
+        --name web-generated --vcs none \
+        --define project-description="An example generated using the web template" \
+        --define gh-username=ijanc \
+        --define domain=example.org \
+        --define store=sqlite \
+        --define auth=local
 
 # Check every *-generated project
 check:

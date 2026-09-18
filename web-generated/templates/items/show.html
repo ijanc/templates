@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.name }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h1 class="h3 mb-1">{{ item.name }}</h1>
+      <p class="text-body-secondary mb-0">
+        Created {{ item.created_at[:16]|replace("T", " ") }},
+        updated {{ item.updated_at[:16]|replace("T", " ") }}
+      </p>
+    </div>
+    {% if not auth or user %}
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="/items/{{ item.id }}/edit">
+          Edit
+        </a>
+        <form method="post" action="/items/{{ item.id }}/delete">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn btn-outline-danger">Delete</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if item.description %}
+    <p>{{ item.description }}</p>
+  {% else %}
+    <p class="text-body-secondary">No description.</p>
+  {% endif %}
+
+  <a class="btn btn-link px-0" href="/items">Back to items</a>
+{% endblock %}

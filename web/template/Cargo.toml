@@ -1,0 +1,80 @@
+[package]
+name = "{{project-name}}"
+version = "0.1.0"
+authors = ["{{authors}}"]
+edition = "2024"
+license = "ISC"
+repository = "https://github.com/{{gh-username}}/{{project-name}}"
+description = "{{project-description}}"
+
+[dependencies]
+anyhow = "1.0.104"
+{%- if auth != "none" %}
+argon2 = "0.6.0"
+{%- endif %}
+axum = { version = "0.8.9", features = ["macros"] }
+chrono = { version = "0.4.45", features = ["serde"] }
+dotenvy = "0.15.7"
+minijinja = { version = "2.24.0", features = ["loader", "urlencode"] }
+minijinja-autoreload = "2.24.0"
+{%- if auth == "google" %}
+oauth2 = "5.0.0"
+{%- endif %}
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+serde_urlencoded = "0.7.1"
+{%- if sqlx %}
+sqlx = { version = "0.8.6", default-features = false, features = [
+  "chrono",
+  "macros",
+  "migrate",
+{%- if store == "postgres" %}
+  "postgres",
+  "runtime-tokio",
+  "tls-rustls",
+{%- else %}
+  "runtime-tokio",
+  "sqlite",
+{%- endif %}
+  "uuid",
+] }
+{%- endif %}
+thiserror = "2.0.20"
+time = "0.3.55"
+tokio = { version = "1.53.1", features = ["full"] }
+tower-http = { version = "0.7.1", features = [
+  "fs",
+  "request-id",
+  "timeout",
+  "trace",
+] }
+tower-sessions = "0.14.0"
+{%- if sqlx %}
+tower-sessions-sqlx-store = { version = "0.15.0", features = [
+{%- if store == "postgres" %}
+  "postgres",
+{%- else %}
+  "sqlite",
+{%- endif %}
+] }
+{%- endif %}
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+uuid = { version = "1.26.1", features = ["serde", "v4"] }
+validator = { version = "0.21.0", features = ["derive"] }
+
+[dev-dependencies]
+reqwest = { version = "0.13.5", default-features = false, features = [
+  "cookies",
+  "form",
+  "json",
+] }
+
+[lib]
+name = "{{crate_name}}"
+path = "src/lib.rs"
+
+[[bin]]
+doc = false
+name = "{{project-name}}"
+path = "src/main.rs"

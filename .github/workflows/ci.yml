@@ -39,6 +39,15 @@ jobs:
             name: api-postgres-generated
             arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=postgres --define cache=false
             database_url: postgres://postgres:postgres@localhost:5432/postgres
+          - template: web
+            name: web-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=sqlite --define auth=local
+          - template: web
+            name: web-google-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=sqlite --define auth=google
+          - template: web
+            name: web-memory-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=memory --define auth=none
     services:
       postgres:
         image: postgres:17

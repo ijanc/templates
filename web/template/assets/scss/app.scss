@@ -1,0 +1,4 @@
+// Override Bootstrap defaults here.
+@use "bootstrap/scss/bootstrap" as * with (
+  $primary: #0d6efd
+);

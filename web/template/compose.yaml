@@ -1,0 +1,39 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      {{env_prefix}}_ADDR: 0.0.0.0:8080
+{%- if store == "sqlite" %}
+      DATABASE_URL: sqlite:///data/{{project-name}}.db?mode=rwc
+    volumes:
+      - ./data:/data
+{%- endif %}
+{%- if store == "postgres" %}
+      DATABASE_URL: postgres://postgres:postgres@db:5432/{{crate_name}}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: {{crate_name}}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
+{%- endif %}
