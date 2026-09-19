@@ -128,12 +128,12 @@ impl Control {
 
     /// Process readiness for the entries [`fill`](Self::fill) appended,
     /// calling `dispatch` with the client's peer id for every request.
-    /// A `None` from `dispatch` means the answer comes later through
+    /// No replies from `dispatch` means the answer comes later through
     /// [`reply`](Self::reply).
     pub fn handle(
         &mut self,
         fds: &[libc::pollfd],
-        dispatch: &mut dyn FnMut(u32, Request) -> Option<Response>,
+        dispatch: &mut dyn FnMut(u32, Request) -> Vec<Response>,
     ) {
         if fds[0].revents & libc::POLLIN != 0 {
             self.accept();
@@ -229,7 +229,7 @@ impl Conn {
 
     fn read(
         &mut self,
-        dispatch: &mut dyn FnMut(u32, Request) -> Option<Response>,
+        dispatch: &mut dyn FnMut(u32, Request) -> Vec<Response>,
     ) {
         match self.ibuf.read() {
             Ok(true) => {}
@@ -271,7 +271,7 @@ impl Conn {
                 self.send(&Response::Fail("permission denied".into()));
                 continue;
             }
-            if let Some(resp) = dispatch(self.peerid, req) {
+            for resp in dispatch(self.peerid, req) {
                 self.send(&resp);
             }
         }

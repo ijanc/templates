@@ -236,6 +236,28 @@ pub fn getpwnam(name: &str) -> Option<Passwd> {
     }
 }
 
+/// Raise the soft open file limit to the hard one; children inherit it.
+pub fn raise_nofile() -> io::Result<()> {
+    let mut rl = libc::rlimit {
+        rlim_cur: 0,
+        rlim_max: 0,
+    };
+    // SAFETY: rl is a valid out pointer, then a valid in pointer.
+    unsafe {
+        if libc::getrlimit(libc::RLIMIT_NOFILE, &raw mut rl) == -1 {
+            return Err(io::Error::last_os_error());
+        }
+        if rl.rlim_cur == rl.rlim_max {
+            return Ok(());
+        }
+        rl.rlim_cur = rl.rlim_max;
+        if libc::setrlimit(libc::RLIMIT_NOFILE, &rl) == -1 {
+            return Err(io::Error::last_os_error());
+        }
+    }
+    Ok(())
+}
+
 pub fn is_root() -> bool {
     // SAFETY: geteuid cannot fail.
     unsafe { libc::geteuid() == 0 }

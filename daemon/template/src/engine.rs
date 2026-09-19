@@ -53,17 +53,21 @@ impl State {
         }
     }
 
-    /// Handle a control request; `None` defers the answer to the
+    /// Handle a control request; no replies defers the answer to the
     /// parent, which replies with the same peer id.
     fn dispatch(
         &mut self,
         parent: &mut Imsgbuf,
         peerid: u32,
         req: Request,
-    ) -> Option<Response> {
-        let config = self.config.as_ref()?;
+    ) -> Vec<Response> {
+        let Some(config) = self.config.as_ref() else {
+            return vec![Response::Fail("not configured".into())];
+        };
         match req {
-            Request::ShowStatus => Some(Response::Status(self.status(config))),
+            Request::ShowStatus => {
+                vec![Response::Status(self.status(config)), Response::End]
+            }
             Request::LogVerbose(on) => {
                 flog::set_verbose(on);
                 log::info!(
@@ -73,20 +77,20 @@ impl State {
                 parent
                     .compose(imsg::IMSG_CTL_VERBOSE, peerid, None, None, &on)
                     .or_fatal();
-                Some(Response::Ok)
+                vec![Response::Ok]
             }
             Request::Reload => {
                 parent
                     .compose(imsg::IMSG_CTL_RELOAD, peerid, None, None, &())
                     .or_fatal();
-                None
+                Vec::new()
             }
             Request::Shutdown => {
                 // Answer first: the parent stops this process on receipt.
                 parent
                     .compose(imsg::IMSG_CTL_SHUTDOWN, peerid, None, None, &())
                     .or_fatal();
-                Some(Response::Ok)
+                vec![Response::Ok]
             }
         }
     }

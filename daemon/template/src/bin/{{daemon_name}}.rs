@@ -253,6 +253,9 @@ fn main() {
     ])
     .or_fatal();
 
+    if let Err(e) = daemon::raise_nofile() {
+        log::warn!("setrlimit: {}", strerror(&e));
+    }
     let engine = proc::spawn(
         ProcId::Engine,
         &ChildOpts {

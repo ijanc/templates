@@ -171,27 +171,34 @@ fn main() {
         eprintln!("{CTL}: write: {}", strerror(&e));
         process::exit(1);
     }
-    let resp = match imsg::read_blocking(&mut stream) {
-        Ok(m) => Response::from_imsg(&m).unwrap_or_else(|e| {
-            eprintln!("{CTL}: {e}");
-            process::exit(1);
-        }),
-        Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
-            eprintln!("{CTL}: pipe closed");
-            process::exit(1);
+    // Replies to a request come as a list closed by a final message.
+    loop {
+        let resp = match imsg::read_blocking(&mut stream) {
+            Ok(m) => Response::from_imsg(&m).unwrap_or_else(|e| {
+                eprintln!("{CTL}: {e}");
+                process::exit(1);
+            }),
+            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
+                eprintln!("{CTL}: pipe closed");
+                process::exit(1);
+            }
+            Err(e) => {
+                eprintln!("{CTL}: read: {}", strerror(&e));
+                process::exit(1);
+            }
+        };
+        let done = resp.is_final();
+        match resp {
+            Response::Status(s) => print_status(&s),
+            Response::Ok => println!("command succeeded"),
+            Response::Fail(msg) => {
+                eprintln!("{CTL}: {msg}");
+                process::exit(1);
+            }
+            Response::End => {}
         }
-        Err(e) => {
-            eprintln!("{CTL}: read: {}", strerror(&e));
-            process::exit(1);
-        }
-    };
-
-    match resp {
-        Response::Status(s) => print_status(&s),
-        Response::Ok => println!("command succeeded"),
-        Response::Fail(msg) => {
-            eprintln!("{CTL}: {msg}");
-            process::exit(1);
+        if done {
+            break;
         }
     }
 }

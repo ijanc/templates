@@ -27,6 +27,8 @@ pub enum Response {
     Status(Status),
     Ok,
     Fail(String),
+    /// Ends a list of replies; `Status` is one such list.
+    End,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -73,12 +75,18 @@ impl Request {
 }
 
 impl Response {
+    /// Whether this reply completes the request.
+    pub fn is_final(&self) -> bool {
+        !matches!(self, Self::Status(_))
+    }
+
     /// Message type and payload.
     pub fn parts(&self) -> io::Result<(u32, Vec<u8>)> {
         Ok(match self {
             Self::Status(s) => (imsg::IMSG_CTL_STATUS, imsg::payload(s)?),
             Self::Ok => (imsg::IMSG_CTL_OK, Vec::new()),
             Self::Fail(e) => (imsg::IMSG_CTL_FAIL, imsg::payload(e)?),
+            Self::End => (imsg::IMSG_CTL_END, Vec::new()),
         })
     }
 
@@ -92,6 +100,7 @@ impl Response {
             imsg::IMSG_CTL_STATUS => Self::Status(m.get()?),
             imsg::IMSG_CTL_OK => Self::Ok,
             imsg::IMSG_CTL_FAIL => Self::Fail(m.get()?),
+            imsg::IMSG_CTL_END => Self::End,
             t => return Err(unknown(t)),
         })
     }
@@ -132,6 +141,7 @@ mod tests {
             }),
             Response::Ok,
             Response::Fail("x".into()),
+            Response::End,
         ] {
             let buf = resp.encode(9).unwrap();
             let (m, _) = imsg::decode(&buf).unwrap().unwrap();
@@ -146,6 +156,23 @@ mod tests {
         let (m, _) = imsg::decode(&buf).unwrap().unwrap();
         assert!(Request::from_imsg(&m).is_err());
         assert!(Response::from_imsg(&m).is_err());
+    }
+
+    #[test]
+    fn status_is_not_final() {
+        assert!(
+            !Response::Status(Status {
+                pid: 1,
+                uptime_secs: 0,
+                config: Config::default(),
+                verbose: false,
+                reloads: 0,
+            })
+            .is_final()
+        );
+        assert!(Response::Ok.is_final());
+        assert!(Response::Fail(String::new()).is_final());
+        assert!(Response::End.is_final());
     }
 
     #[test]

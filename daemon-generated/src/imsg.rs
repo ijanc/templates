@@ -42,6 +42,8 @@ pub const IMSG_CTL_STATUS: u32 = 4;
 pub const IMSG_CTL_VERBOSE: u32 = 5;
 pub const IMSG_CTL_RELOAD: u32 = 6;
 pub const IMSG_CTL_SHUTDOWN: u32 = 7;
+/// Ends a list of replies.
+pub const IMSG_CTL_END: u32 = 8;
 // Parent to engine.
 pub const IMSG_CONTROLFD: u32 = 100;
 pub const IMSG_RECONF_CONF: u32 = 101;
