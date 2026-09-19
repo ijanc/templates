@@ -1,0 +1,27 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    environment: crates-io
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: |
+          tag="{% raw %}${GITHUB_REF_NAME#v}{% endraw %}"
+          ver="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
+          test "$tag" = "$ver" || { echo "tag $tag != Cargo.toml $ver"; exit 1; }
+      - run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: {% raw %}${{ secrets.CARGO_REGISTRY_TOKEN }}{% endraw %}

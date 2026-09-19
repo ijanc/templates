@@ -1,0 +1,27 @@
+[package]
+name = "lib-serde-generated"
+version = "0.1.0"
+authors = ["your name <author@example.com>"]
+categories = []
+documentation = "https://docs.rs/lib-serde-generated"
+edition = "2024"
+keywords = []
+license = "ISC"
+repository = "https://github.com/ijanc/lib-serde-generated"
+rust-version = "1.85"
+description = "An example generated using the lib template"
+
+[features]
+default = []
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"], optional = true }
+thiserror = "2.0.20"
+
+[dev-dependencies]
+serde_json = "1.0.151"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

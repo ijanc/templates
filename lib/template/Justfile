@@ -1,0 +1,25 @@
+[private]
+default:
+    @just --list
+
+alias ck := check
+
+# Check formatting, spelling, licenses, advisories and docs
+check:
+    dprint check
+    typos
+    cargo deny check licenses advisories
+    RUSTDOCFLAGS="-D warnings --cfg docsrs" cargo doc --no-deps --all-features
+
+# Fix formatting and spelling
+fmt:
+    dprint fmt
+    typos --write-changes
+
+# Check the crate builds with the minimum supported Rust version
+msrv:
+    cargo +1.85 check --all-features
+
+# Generate the security PGP key and record it in SECURITY.md
+security-key:
+    sh contrib/gen-security-key.sh

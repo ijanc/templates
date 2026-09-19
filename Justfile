@@ -11,6 +11,8 @@ generate-all:
     just generate-api-sqlite
     just generate-api-postgres
     just generate-web
+    just generate-lib
+    just generate-lib-serde
 
 # Regenerate daemon-generated from ./daemon
 generate-daemon $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
@@ -87,6 +89,26 @@ generate-web $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
         --define domain=example.org \
         --define store=sqlite \
         --define auth=local
+
+# Regenerate lib-generated from ./lib (no features)
+generate-lib $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
+    rm -rf lib-generated
+    cargo generate --path ./lib \
+        --name lib-generated --vcs none \
+        --define project-description="An example generated using the lib template" \
+        --define gh-username=ijanc \
+        --define domain=example.org \
+        --define serde=false
+
+# Regenerate lib-serde-generated from ./lib (serde feature)
+generate-lib-serde $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
+    rm -rf lib-serde-generated
+    cargo generate --path ./lib \
+        --name lib-serde-generated --vcs none \
+        --define project-description="An example generated using the lib template" \
+        --define gh-username=ijanc \
+        --define domain=example.org \
+        --define serde=true
 
 # Check every *-generated project
 check:

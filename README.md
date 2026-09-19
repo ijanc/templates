@@ -23,6 +23,7 @@ cargo generate ijanc/templates daemon --name bar
 | [cli](./cli/)       | Command line tool with getopt/clap, env_logger, optional TOML/.env   |
 | [api](./api/)       | axum REST API with OpenAPI, metrics, memory/SQLite/PostgreSQL store |
 | [web](./web/)       | axum web app with MiniJinja, sessions, CSRF, Bootstrap, invites     |
+| [lib](./lib/)       | Library crate with thiserror, optional serde, docs/MSRV CI, release |
 
 Each `<name>-generated/` directory is the committed output of
 `just generate-<name>`, so changes to a template show up as a diff.

@@ -1,0 +1,33 @@
+[package]
+name = "{{project-name}}"
+version = "0.1.0"
+authors = ["{{authors}}"]
+categories = []
+documentation = "https://docs.rs/{{project-name}}"
+edition = "2024"
+keywords = []
+license = "ISC"
+repository = "https://github.com/{{gh-username}}/{{project-name}}"
+rust-version = "1.85"
+description = "{{project-description}}"
+
+[features]
+default = []
+{%- if serde %}
+serde = ["dep:serde"]
+{%- endif %}
+
+[dependencies]
+{%- if serde %}
+serde = { version = "1.0.229", features = ["derive"], optional = true }
+{%- endif %}
+thiserror = "2.0.20"
+{%- if serde %}
+
+[dev-dependencies]
+serde_json = "1.0.151"
+{%- endif %}
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

@@ -1,0 +1,12 @@
+[template]
+cargo_generate_version = ">=0.21.1"
+ignore = ["Cargo.lock", "target"]
+
+[hooks]
+pre = ["hooks/pre.rhai"]
+
+[placeholders]
+project-description = { type = "string", prompt = "Short description", default = "Rust library" }
+gh-username = { type = "string", prompt = "GitHub username (repository URL, FUNDING.yml)" }
+domain = { type = "string", prompt = "Domain for security/conduct contact emails", default = "example.org" }
+serde = { type = "bool", prompt = "Optional serde feature?", default = false }

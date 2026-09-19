@@ -1,0 +1,22 @@
+[package]
+name = "lib-generated"
+version = "0.1.0"
+authors = ["generate-lib-serde <author@example.com>"]
+categories = []
+documentation = "https://docs.rs/lib-generated"
+edition = "2024"
+keywords = []
+license = "ISC"
+repository = "https://github.com/ijanc/lib-generated"
+rust-version = "1.85"
+description = "An example generated using the lib template"
+
+[features]
+default = []
+
+[dependencies]
+thiserror = "2.0.20"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
