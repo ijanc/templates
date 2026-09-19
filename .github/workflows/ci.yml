@@ -66,16 +66,23 @@ jobs:
       DATABASE_URL: ${{ matrix.database_url }}
     steps:
       - uses: actions/checkout@v7
-      - uses: cargo-generate/cargo-generate-action@v0.20.0
-        with:
-          name: ${{ env.PROJECT_NAME }}
-          template: ${{ matrix.template }}
-          arguments: ${{ matrix.arguments }}
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly-2026-09-13
           components: clippy
+      # cargo-generate/cargo-generate-action is stuck on 0.20.0, older than
+      # the templates require; install a prebuilt binary instead.
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-generate
       - run: sudo apt-get install -y --no-install-recommends mandoc
+      - run: >-
+          cargo generate --path ./${{ matrix.template }}
+          --name ${{ env.PROJECT_NAME }} --vcs none
+          ${{ matrix.arguments }}
+        env:
+          CARGO_NAME: ci
+          CARGO_EMAIL: ci@example.org
       # Move the generated project out of the template repository, otherwise
       # cargo picks up the workspace: https://github.com/rust-lang/cargo/issues/9922
       - run: |
