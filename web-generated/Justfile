@@ -15,17 +15,17 @@ fmt:
     dprint fmt
     typos --write-changes
 
-# Install the stylesheet and script dependencies
+# Install the stylesheet dependencies
 deps:
     npm install
 
-# Build static/css and static/js from assets/ and node_modules/
+# Build static/css/app.css from assets/scss
 assets:
     npm run build
 
 # Rebuild the stylesheet as assets/scss changes
 watch-assets:
-    npm run watch:css
+    npm run watch
 
 # Build the release binary
 build:

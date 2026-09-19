@@ -1,62 +1,70 @@
 {% extends "base.html" %}
+{% import "partials/icons.html" as icons %}
 
-{% block title %}Invitations - {{ app_name }}{% endblock %}
+{% block title %}Invitations &mdash; {{ app_name }}{% endblock %}
 
 {% block content %}
-  <h1 class="h3 mb-3">Invitations</h1>
-
-  <form method="post" action="/invites" novalidate
-        class="row row-cols-lg-auto g-2 align-items-start mb-4">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <div class="col-12">
-      <label for="email" class="visually-hidden">Email</label>
-      <input type="email" id="email" name="email"
-             placeholder="who it is for (optional)"
-             value="{{ form.email or '' }}"
-             class="form-control{% if errors.email %} is-invalid{% endif %}">
-      {% for m in errors.email or [] %}
-        <div class="invalid-feedback">{{ m }}</div>
-      {% endfor %}
-    </div>
-    <div class="col-12">
-      <button type="submit" class="btn btn-primary">Create invitation</button>
-    </div>
-  </form>
-
-  {% if invites %}
-    <div class="table-responsive">
-      <table class="table align-middle">
-        <thead>
-          <tr>
-            <th scope="col">Link</th>
-            <th scope="col">For</th>
-            <th scope="col">Expires</th>
-            <th scope="col">State</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for invite in invites %}
-            <tr>
-              <td>
-                <code class="user-select-all">/register?token={{ invite.token }}</code>
-              </td>
-              <td>{{ invite.email or "anyone" }}</td>
-              <td>{{ invite.expires_at[:16]|replace("T", " ") }}</td>
-              <td>
-                {% if invite.used_at %}
-                  <span class="badge text-bg-secondary">used</span>
-                {% elif invite.expires_at < now %}
-                  <span class="badge text-bg-warning">expired</span>
-                {% else %}
-                  <span class="badge text-bg-success">open</span>
-                {% endif %}
-              </td>
-            </tr>
+  <div class="row">
+    <div class="col-md-4">
+      <h2>Invitations</h2>
+      <p>
+        Accounts are created by invitation. Make one and send the link
+        to whoever it is for.
+      </p>
+      <form method="post" action="/invites" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="mb-3">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email"
+                 placeholder="who it is for (optional)"
+                 value="{{ form.email or '' }}"
+                 class="form-control{% if errors.email %} is-invalid{% endif %}">
+          {% for m in errors.email or [] %}
+            <div class="invalid-feedback">{{ m }}</div>
           {% endfor %}
-        </tbody>
-      </table>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          Create invitation {{ icons.icon("caret-right") }}
+        </button>
+      </form>
     </div>
-  {% else %}
-    <p class="text-body-secondary">No invitations yet.</p>
-  {% endif %}
+    <div class="col-md-8">
+      {% if invites %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Link</th>
+                <th scope="col">For</th>
+                <th scope="col">Expires</th>
+                <th scope="col">State</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for invite in invites %}
+                <tr>
+                  <td>
+                    <code class="user-select-all">/register?token={{ invite.token }}</code>
+                  </td>
+                  <td>{{ invite.email or "anyone" }}</td>
+                  <td>{{ invite.expires_at[:16]|replace("T", " ") }}</td>
+                  <td>
+                    {% if invite.used_at %}
+                      <span class="badge text-bg-secondary">used</span>
+                    {% elif invite.expires_at < now %}
+                      <span class="badge text-bg-warning">expired</span>
+                    {% else %}
+                      <span class="badge text-bg-success">open</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p>No invitations yet.</p>
+      {% endif %}
+    </div>
+  </div>
 {% endblock %}

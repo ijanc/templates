@@ -2,13 +2,11 @@
   "name": "web-generated",
   "version": "0.1.0",
   "private": true,
-  "description": "Stylesheet and script build for web-generated",
+  "description": "Stylesheet build for web-generated",
   "license": "ISC",
   "scripts": {
-    "build": "npm run build:css && npm run build:js",
-    "build:css": "sass --load-path=node_modules --quiet-deps --style=compressed assets/scss/app.scss static/css/app.css",
-    "build:js": "mkdir -p static/js && cp node_modules/bootstrap/dist/js/bootstrap.bundle.min.js static/js/",
-    "watch:css": "sass --load-path=node_modules --quiet-deps --watch assets/scss/app.scss static/css/app.css"
+    "build": "sass --load-path=node_modules --quiet-deps --silence-deprecation=import --no-source-map --style=compressed assets/scss/app.scss static/css/app.css",
+    "watch": "sass --load-path=node_modules --quiet-deps --silence-deprecation=import --watch assets/scss/app.scss static/css/app.css"
   },
   "devDependencies": {
     "bootstrap": "^5.3.8",

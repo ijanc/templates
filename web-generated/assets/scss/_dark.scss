@@ -1,0 +1,113 @@
+// Dark mode. Bootstrap handles its own components through the
+// *-dark variables; this covers what the site draws itself.
+@use "sass:color";
+
+$darker: color.adjust($gray-900, $lightness: -6%);
+
+@include color-mode(dark) {
+  h3,
+  h4 {
+    border-bottom-color: $gray-700;
+  }
+
+  pre {
+    color: $white;
+    background: $darker;
+  }
+
+  .event {
+    color: $white;
+    background: $darker;
+  }
+
+  .label {
+    border-color: $gray-400;
+  }
+
+  .form-control,
+  .form-select {
+    color: $white;
+    background: $darker;
+    border-color: $gray-700;
+
+    &:focus {
+      color: $white;
+      background: $gray-900;
+    }
+
+    &:disabled,
+    &[readonly] {
+      color: $gray-400;
+      background: $gray-900;
+    }
+  }
+
+  .btn-default,
+  .btn-secondary {
+    @include btn-type($gray-900, $white, $gray-700, $darker);
+  }
+
+  .btn-primary,
+  .btn-success,
+  .btn-danger,
+  .btn-info {
+    --bs-btn-border-color: #{$darker};
+    --bs-btn-hover-border-color: #{$darker};
+    --bs-btn-active-border-color: #{$darker};
+  }
+
+  .table {
+    --bs-table-bg: #{$gray-800};
+    --bs-table-border-color: #{$gray-900};
+  }
+
+  .nav-tabs {
+    border-bottom-color: $darker;
+
+    .nav-link {
+      color: $gray-400;
+
+      &.active,
+      &.active:hover,
+      &:hover {
+        color: $white;
+        background: $darker;
+      }
+
+      &[disabled] {
+        color: $gray-600;
+      }
+    }
+  }
+
+  .header-tabbed {
+    border-color: $darker;
+
+    .nav .nav-item:hover {
+      background: $darker;
+
+      a {
+        color: $white;
+      }
+    }
+  }
+
+  .header-extension {
+    background: $darker;
+  }
+
+  .subnav {
+    .nav-item:hover {
+      background: inherit;
+    }
+
+    .nav-tabs .nav-link {
+      &.active,
+      &:hover {
+        color: $white;
+        background: $gray-900;
+        border-bottom-color: $gray-900;
+      }
+    }
+  }
+}

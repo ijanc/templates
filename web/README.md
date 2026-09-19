@@ -7,8 +7,9 @@ across redirects, HTML error pages, `X-Request-Id` set and propagated on
 every request, `tracing` logs (pretty or JSON), a store that is
 in-memory, SQLite or PostgreSQL (sqlx, embedded migrations), optional
 invite-only accounts with Argon2 passwords and Google sign in, and
-Bootstrap styling compiled from SCSS with `sass`. Configuration comes
-from the environment and `.env`. Ships a multi-stage Dockerfile that
+a trimmed Bootstrap with a flat, text-first look and a dark theme,
+compiled from SCSS with `sass`. Configuration comes from the
+environment and `.env`. Ships a multi-stage Dockerfile that
 builds the stylesheet in a node stage, a compose file, CI, pre-commit,
 dprint, typos and cargo-deny setup.
 
@@ -50,9 +51,9 @@ template/
   src/store_sqlx.rs      sqlx pool        -> src/store.rs (store=sqlite|postgres)
   migrations/            sqlx migrations (store=sqlite|postgres)
   templates/             MiniJinja pages, copied through untouched
-  assets/scss/app.scss   Bootstrap import and variable overrides
-  static/robots.txt      the only committed static file; css and js are built
-  package.json           bootstrap + sass, build:css and build:js
+  assets/scss/           Bootstrap imports and the site partials
+  static/robots.txt      the only committed static file; css is built
+  package.json           bootstrap + sass, build and watch
   tests/common/mod.rs    spawn() on an ephemeral port, with a cookie jar
   tests/items.rs         forms, redirects, flash, validation
   tests/auth.rs          invites, register, login, guard (auth != none)

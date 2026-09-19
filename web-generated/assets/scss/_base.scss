@@ -1,0 +1,189 @@
+// Typography, forms, tables, buttons and blocks shared by every page.
+@use "sass:color";
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  padding-bottom: 1rem;
+
+  > footer {
+    margin-top: 2rem;
+  }
+}
+
+@include media-breakpoint-down(lg) {
+  .container {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+h1 a,
+h2 a,
+h3 a,
+h4 a,
+h5 a {
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+h1,
+h2 {
+  margin-top: 0;
+
+  small {
+    font-size: $font-size-base;
+  }
+}
+
+h3 {
+  padding-bottom: .25rem;
+  border-bottom: 1px solid $gray-200;
+
+  small {
+    margin-left: 1rem;
+    font-size: 1rem;
+  }
+}
+
+h4 {
+  padding-bottom: .25rem;
+  border-bottom: 1px solid $gray-200;
+
+  small {
+    margin-left: 1rem;
+    font-size: .8rem;
+  }
+}
+
+h5 {
+  font-weight: bold;
+}
+
+section {
+  padding-bottom: .5rem;
+}
+
+blockquote {
+  padding-left: .5rem;
+  border-left: 3px solid #aaa;
+}
+
+pre {
+  padding: .25rem;
+  background: $gray-200;
+}
+
+code {
+  margin: 0;
+  background: transparent;
+}
+
+// Forms
+
+form {
+  margin-bottom: 1rem;
+}
+
+label {
+  margin-bottom: .25rem;
+}
+
+// Tables
+
+.table {
+  thead th {
+    padding: $table-cell-padding-y $table-cell-padding-x;
+    border: none;
+  }
+
+  tbody td {
+    padding: $table-cell-padding-y $table-cell-padding-x;
+    vertical-align: middle;
+    border: 1px solid var(--bs-table-border-color);
+
+    label {
+      margin-bottom: 0;
+    }
+  }
+
+  // Tokens and URLs must not widen the table past the page.
+  code {
+    word-break: break-all;
+  }
+}
+
+// Buttons: a dark border, a lighter background on hover.
+
+@mixin btn-type($background, $foreground, $border, $hover) {
+  @include button-variant(
+    $background,
+    $border,
+    $color: $foreground,
+    $hover-background: $hover,
+    $hover-border: $border,
+    $hover-color: $foreground,
+    $active-background: $hover,
+    $active-border: $border,
+    $active-color: $foreground
+  );
+}
+
+.btn-default,
+.btn-secondary {
+  @include btn-type($gray-300, $black, $gray-800, $gray-200);
+}
+
+.btn-primary {
+  @include btn-type(
+    color.adjust($primary, $lightness: -10%),
+    $white,
+    color.adjust($primary, $lightness: -40%),
+    $primary
+  );
+}
+
+.btn-success {
+  @include btn-type(
+    color.adjust($success, $lightness: -12%),
+    $white,
+    color.adjust($success, $lightness: -20%),
+    color.adjust($success, $lightness: -10%)
+  );
+}
+
+.btn-info {
+  @include btn-type(
+    color.adjust($info, $lightness: -10%),
+    $white,
+    color.adjust($info, $lightness: -40%),
+    $info
+  );
+}
+
+.btn-danger {
+  @include btn-type(
+    color.adjust($danger, $lightness: -5%),
+    $white,
+    color.adjust($danger, $lightness: -40%),
+    $danger
+  );
+}
+
+// A button that reads as a link, for forms that must post (sign out).
+.btn-link {
+  margin-top: -.1rem;
+  padding: 0;
+  font-size: $font-size-base;
+  text-decoration: underline;
+  vertical-align: baseline;
+
+  &:hover {
+    text-decoration: none;
+  }
+}

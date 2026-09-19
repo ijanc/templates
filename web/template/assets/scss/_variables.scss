@@ -1,0 +1,96 @@
+// Bootstrap variable overrides. This file is read before Bootstrap's
+// own variables, so only literals and the functions module are
+// available here; anything Bootstrap derives from these follows.
+@use "sass:color";
+
+// Palette
+$white: #fff;
+$gray-100: #f8f9fa;
+$gray-200: #e9ecef;
+$gray-300: #dee2e6;
+$gray-400: #ced4da;
+$gray-500: #adb5bd;
+$gray-600: #6c757d;
+$gray-700: #495057;
+$gray-800: #343a40;
+$gray-900: #212529;
+$black: #000;
+
+$blue: #007bff;
+$green: #28a745;
+$cyan: #17a2b8;
+$yellow: #ffc107;
+$red: #dc3545;
+
+$primary: $blue;
+$secondary: $gray-600;
+$success: $green;
+$info: $cyan;
+$warning: $yellow;
+$danger: $red;
+
+// Flat: no rounded corners, no shadows, no gradients.
+$enable-rounded: false;
+$enable-shadows: false;
+$enable-gradients: false;
+$enable-validation-icons: false;
+
+// Dark mode follows the system preference, no toggle and no script.
+$color-mode-type: media-query;
+
+// Type: the system fonts, links underlined until hovered.
+$font-family-sans-serif: sans-serif;
+$font-family-monospace: monospace;
+$font-size-base: 1rem;
+$body-color: $gray-900;
+$link-color: #0044ff;
+$link-decoration: underline;
+$link-hover-decoration: none;
+$h3-font-size: 1.3rem;
+$h4-font-size: 1.1rem;
+$h5-font-size: 1rem;
+$h6-font-size: 1rem;
+$code-color: $black;
+$code-color-dark: $white;
+
+// Forms: compact fields with a visible border.
+$input-padding-y: .25rem;
+$input-padding-x: .375rem;
+$input-border-color: #888;
+$input-color: $gray-800;
+$input-focus-color: $gray-800;
+$input-focus-border-color: #555;
+$form-label-margin-bottom: .25rem;
+$legend-font-size: $font-size-base;
+$legend-margin-bottom: 0;
+
+// Buttons: small, square, a quick background change on hover.
+$btn-padding-y: .1rem;
+$btn-padding-x: .75rem;
+$btn-font-size: .9rem;
+$btn-padding-y-sm: 0;
+$btn-padding-x-sm: .75rem;
+$btn-font-size-sm: .95rem;
+$btn-transition: background .1s linear;
+
+// Tables: tight rows, bordered cells.
+$table-cell-padding-y: .1rem;
+$table-cell-padding-x: .75rem;
+$table-border-color: $gray-400;
+$table-striped-bg: rgba($black, .05);
+
+$alert-padding-y: .5rem;
+$alert-padding-x: .5rem;
+$badge-font-weight: 600;
+
+// Navigation: the tab bar draws its own border.
+$nav-tabs-border-width: 0;
+$nav-tabs-background: #ddd;
+
+// Dark palette.
+$body-bg-dark: $gray-900;
+$body-color-dark: $gray-100;
+$body-secondary-color-dark: $gray-400;
+$body-tertiary-bg-dark: color.adjust($gray-900, $lightness: -6%);
+$link-color-dark: color.adjust($primary, $lightness: 10%);
+$border-color-dark: $gray-700;

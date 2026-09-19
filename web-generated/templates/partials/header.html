@@ -1,0 +1,23 @@
+{# A page title with its tabs, full width under the top bar. Pages that
+   use it override `body` rather than `content`, since it sits outside
+   the container:
+     {% import "partials/header.html" as header %}
+     {{ header.header("Title", [("details", "/x", true), ("edit", "/x/edit", false)]) }}
+   Each tab is (label, href, active). #}
+{% macro header(heading, tabs=[]) %}
+<div class="header-tabbed">
+  <div class="container">
+    <h2>{{ heading }}</h2>
+    {% if tabs %}
+      <ul class="nav nav-tabs">
+        {% for label, href, active in tabs %}
+          <li class="nav-item">
+            <a class="nav-link{% if active %} active{% endif %}"
+               href="{{ href }}">{{ label }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}

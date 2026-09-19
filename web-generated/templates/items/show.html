@@ -1,34 +1,43 @@
 {% extends "base.html" %}
+{% import "partials/icons.html" as icons %}
+{% import "partials/header.html" as header %}
 
-{% block title %}{{ item.name }} - {{ app_name }}{% endblock %}
+{% block title %}{{ item.name }} &mdash; {{ app_name }}{% endblock %}
 
-{% block content %}
-  <div class="d-flex justify-content-between align-items-start mb-3">
-    <div>
-      <h1 class="h3 mb-1">{{ item.name }}</h1>
-      <p class="text-body-secondary mb-0">
-        Created {{ item.created_at[:16]|replace("T", " ") }},
-        updated {{ item.updated_at[:16]|replace("T", " ") }}
-      </p>
-    </div>
-    {% if not auth or user %}
-      <div class="d-flex gap-2">
-        <a class="btn btn-outline-secondary" href="/items/{{ item.id }}/edit">
-          Edit
-        </a>
-        <form method="post" action="/items/{{ item.id }}/delete">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="btn btn-outline-danger">Delete</button>
-        </form>
+{% block body %}
+  {% set url = "/items/" ~ item.id %}
+  {% set tabs = [("details", url, true), ("edit", url ~ "/edit", false)]
+     if not auth or user else [("details", url, true)] %}
+  {{ header.header(item.name, tabs) }}
+
+  <div class="container">
+    {% include "partials/flash.html" %}
+    <div class="row">
+      <div class="col-md-8">
+        {% if item.description %}
+          <p>{{ item.description }}</p>
+        {% else %}
+          <p class="text-muted">No description.</p>
+        {% endif %}
       </div>
-    {% endif %}
+      <div class="col-md-4">
+        <h4>Details</h4>
+        <dl class="row">
+          <dt class="col-sm-4">Created</dt>
+          <dd class="col-sm-8">{{ item.created_at[:16]|replace("T", " ") }}</dd>
+          <dt class="col-sm-4">Updated</dt>
+          <dd class="col-sm-8">{{ item.updated_at[:16]|replace("T", " ") }}</dd>
+        </dl>
+        {% if not auth or user %}
+          <form method="post" action="{{ url }}/delete">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-danger">
+              Delete {{ icons.icon("caret-right") }}
+            </button>
+          </form>
+        {% endif %}
+        <a href="/items">{{ icons.icon("caret-left") }} Back to items</a>
+      </div>
+    </div>
   </div>
-
-  {% if item.description %}
-    <p>{{ item.description }}</p>
-  {% else %}
-    <p class="text-body-secondary">No description.</p>
-  {% endif %}
-
-  <a class="btn btn-link px-0" href="/items">Back to items</a>
 {% endblock %}

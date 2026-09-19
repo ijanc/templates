@@ -1,0 +1,88 @@
+// A list of boxed entries: items, activity, search results.
+
+.event-list {
+  margin-bottom: 1rem;
+}
+
+.event {
+  padding: .5rem;
+  margin: .5rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: $gray-100;
+
+  &:first-child {
+    margin-top: 0;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  h4 {
+    margin-bottom: 0;
+    padding: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: none;
+  }
+
+  blockquote {
+    margin-bottom: .5rem;
+
+    *:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  p {
+    margin-bottom: .25rem;
+  }
+
+  *:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Title row of an event: a growing label with the details after it.
+.event-header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+
+  .event & {
+    margin-bottom: .25rem;
+  }
+
+  > *:not(:last-child) {
+    margin-right: .25rem;
+  }
+
+  > span {
+    flex-grow: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// A small bordered tag, inline with text.
+.label {
+  display: inline-block;
+  margin-bottom: .3rem;
+  padding: .1rem .5rem;
+  white-space: nowrap;
+  border: 1px solid $black;
+
+  &.small {
+    padding: 0 .3rem;
+    font-size: .7rem;
+  }
+
+  a,
+  .btn {
+    color: inherit;
+  }
+}

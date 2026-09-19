@@ -1,0 +1,67 @@
+// Inline SVG icons, see templates/partials/icons.html.
+.icon {
+  display: inline-block;
+  width: 1.1em;
+  line-height: .75em;
+  vertical-align: -.2em;
+
+  svg {
+    display: block;
+  }
+
+  path,
+  polygon {
+    fill: currentcolor;
+  }
+
+  circle {
+    fill: none;
+    stroke: currentcolor;
+  }
+
+  .btn & {
+    vertical-align: -.3em;
+  }
+
+  &.sm {
+    width: .9em;
+    vertical-align: -.2em;
+  }
+}
+
+.icon-caret-left,
+.icon-caret-right {
+  width: .5em;
+  vertical-align: -.35em;
+
+  &.sm {
+    width: .4em;
+  }
+
+  .btn & {
+    margin-left: .2rem;
+  }
+}
+
+.icon-times {
+  width: .8em;
+  vertical-align: -.25em;
+}
+
+@keyframes icon-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.icon-spin {
+  animation: icon-spin 2s infinite linear;
+
+  @media (prefers-reduced-motion) {
+    animation: none;
+  }
+}

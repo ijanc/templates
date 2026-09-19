@@ -2,7 +2,6 @@
 /.env
 /node_modules
 /static/css
-/static/js
 /*.db
 /*.db-*
 /data
