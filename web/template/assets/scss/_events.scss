@@ -11,6 +11,19 @@
   text-overflow: ellipsis;
   background: $gray-100;
 
+  // Links and muted text darkened to keep contrast on the grey box.
+  a {
+    color: #0640e0;
+
+    &:hover {
+      color: #022ea7;
+    }
+  }
+
+  .text-muted {
+    color: #626363 !important;
+  }
+
   &:first-child {
     margin-top: 0;
   }

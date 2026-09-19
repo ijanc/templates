@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "partials/icons.html" as icons %}
+{% import "partials/forms.html" as forms %}
 
 {% block title %}Invitations &mdash; {{ app_name }}{% endblock %}
 
@@ -13,16 +14,8 @@
       </p>
       <form method="post" action="/invites" novalidate>
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <div class="mb-3">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email"
-                 placeholder="who it is for (optional)"
-                 value="{{ form.email or '' }}"
-                 class="form-control{% if errors.email %} is-invalid{% endif %}">
-          {% for m in errors.email or [] %}
-            <div class="invalid-feedback">{{ m }}</div>
-          {% endfor %}
-        </div>
+        {{ forms.input("email", "Email", value=form.email, errors=errors.email,
+                       type="email", placeholder="who it is for (optional)") }}
         <button type="submit" class="btn btn-primary">
           Create invitation {{ icons.icon("caret-right") }}
         </button>

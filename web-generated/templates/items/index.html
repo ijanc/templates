@@ -14,7 +14,7 @@
         {% endif %}
       </p>
       {% if not auth or user %}
-        <a class="btn btn-primary" href="/items/new">
+        <a class="btn btn-primary btn-block" href="/items/new">
           New item {{ icons.icon("caret-right") }}
         </a>
       {% else %}
@@ -28,13 +28,15 @@
         <div class="event-list">
           {% for item in page.items %}
             <div class="event">
-              <h4><a href="/items/{{ item.id }}">{{ item.name }}</a></h4>
+              <h4 class="event-header">
+                <span><a href="/items/{{ item.id }}">{{ item.name }}</a></span>
+                <small class="text-muted">
+                  {{ item.created_at[:16]|replace("T", " ") }}
+                </small>
+              </h4>
               {% if item.description %}
                 <p>{{ item.description }}</p>
               {% endif %}
-              <span class="text-muted">
-                Created {{ item.created_at[:16]|replace("T", " ") }}
-              </span>
             </div>
           {% endfor %}
         </div>

@@ -18,11 +18,13 @@
 @import "bootstrap/scss/forms";
 @import "bootstrap/scss/buttons";
 @import "bootstrap/scss/transitions";
+@import "bootstrap/scss/dropdown";
 @import "bootstrap/scss/button-group";
 @import "bootstrap/scss/nav";
 @import "bootstrap/scss/navbar";
 @import "bootstrap/scss/badge";
 @import "bootstrap/scss/alert";
+@import "bootstrap/scss/progress";
 @import "bootstrap/scss/helpers";
 @import "bootstrap/scss/utilities/api";
 
@@ -30,4 +32,5 @@
 @import "base";
 @import "nav";
 @import "events";
+@import "components";
 @import "dark";

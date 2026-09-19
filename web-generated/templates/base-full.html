@@ -1,0 +1,16 @@
+{# base.html with the top bar and body spanning the whole window, for
+   pages that need the width: code, logs, wide tables. #}
+{% extends "base.html" %}
+
+{% block nav %}
+  <nav class="container-fluid navbar navbar-expand-sm">
+    {% include "partials/nav.html" %}
+  </nav>
+{% endblock %}
+
+{% block body %}
+  <div class="container-fluid">
+    {% include "partials/flash.html" %}
+    {% block content %}{% endblock %}
+  </div>
+{% endblock %}

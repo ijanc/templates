@@ -44,6 +44,7 @@ $font-family-monospace: monospace;
 $font-size-base: 1rem;
 $body-color: $gray-900;
 $link-color: #0044ff;
+$link-hover-color: #022ea7;
 $link-decoration: underline;
 $link-hover-decoration: none;
 $h3-font-size: 1.3rem;
@@ -59,7 +60,7 @@ $input-padding-x: .375rem;
 $input-border-color: #888;
 $input-color: $gray-800;
 $input-focus-color: $gray-800;
-$input-focus-border-color: #555;
+$input-focus-border-color: #80bdff;
 $form-label-margin-bottom: .25rem;
 $legend-font-size: $font-size-base;
 $legend-margin-bottom: 0;
@@ -83,9 +84,17 @@ $alert-padding-y: .5rem;
 $alert-padding-x: .5rem;
 $badge-font-weight: 600;
 
-// Navigation: the tab bar draws its own border.
+// Navigation: the tab bar draws its own border; top bar links stay grey
+// until hovered.
 $nav-tabs-border-width: 0;
 $nav-tabs-background: #ddd;
+$navbar-light-color: #696969;
+$navbar-light-hover-color: rgba($black, .7);
+$navbar-light-active-color: $black;
+
+$progress-bar-bg: $link-color;
+$dropdown-border-color: $gray-400;
+$dropdown-link-hover-bg: $gray-200;
 
 // Dark palette.
 $body-bg-dark: $gray-900;

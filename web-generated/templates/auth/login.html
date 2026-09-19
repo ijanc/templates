@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "partials/icons.html" as icons %}
+{% import "partials/forms.html" as forms %}
 
 {% block title %}Sign in &mdash; {{ app_name }}{% endblock %}
 
@@ -24,27 +25,12 @@
           <div class="alert alert-danger" role="alert">{{ message }}</div>
         {% endif %}
 
-        <div class="mb-3">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" required
-                 autocomplete="username" value="{{ form.email or '' }}"
-                 {% if not form.email %}autofocus{% endif %}
-                 class="form-control{% if errors.email %} is-invalid{% endif %}">
-          {% for m in errors.email or [] %}
-            <div class="invalid-feedback">{{ m }}</div>
-          {% endfor %}
-        </div>
-
-        <div class="mb-3">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" required
-                 autocomplete="current-password"
-                 {% if form.email %}autofocus{% endif %}
-                 class="form-control{% if errors.password %} is-invalid{% endif %}">
-          {% for m in errors.password or [] %}
-            <div class="invalid-feedback">{{ m }}</div>
-          {% endfor %}
-        </div>
+        {{ forms.input("email", "Email", value=form.email, errors=errors.email,
+                       type="email", required=true, autocomplete="username",
+                       autofocus=not form.email) }}
+        {{ forms.input("password", "Password", errors=errors.password,
+                       type="password", required=true,
+                       autocomplete="current-password", autofocus=form.email) }}
 
         <button type="submit" class="btn btn-primary float-end">
           Sign in {{ icons.icon("caret-right") }}

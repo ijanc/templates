@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "partials/icons.html" as icons %}
+{% import "partials/forms.html" as forms %}
 
 {% block title %}Create an account &mdash; {{ app_name }}{% endblock %}
 
@@ -21,49 +22,15 @@
           <div class="alert alert-danger" role="alert">{{ message }}</div>
         {% endif %}
 
-        <div class="mb-3">
-          <label for="token">Invitation</label>
-          <input type="text" id="token" name="token" required
-                 value="{{ form.token or '' }}"
-                 class="form-control{% if errors.token %} is-invalid{% endif %}">
-          <small class="form-text text-muted">
-            Filled in for you by the invitation link.
-          </small>
-          {% for m in errors.token or [] %}
-            <div class="invalid-feedback">{{ m }}</div>
-          {% endfor %}
-        </div>
-
-        <div class="mb-3">
-          <label for="name">Name</label>
-          <input type="text" id="name" name="name" required maxlength="200"
-                 dir="auto" value="{{ form.name or '' }}"
-                 class="form-control{% if errors.name %} is-invalid{% endif %}">
-          {% for m in errors.name or [] %}
-            <div class="invalid-feedback">{{ m }}</div>
-          {% endfor %}
-        </div>
-
-        <div class="mb-3">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" required
-                 autocomplete="username" value="{{ form.email or '' }}"
-                 class="form-control{% if errors.email %} is-invalid{% endif %}">
-          {% for m in errors.email or [] %}
-            <div class="invalid-feedback">{{ m }}</div>
-          {% endfor %}
-        </div>
-
-        <div class="mb-3">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" required
-                 minlength="12" autocomplete="new-password"
-                 class="form-control{% if errors.password %} is-invalid{% endif %}">
-          <small class="form-text text-muted">At least 12 characters.</small>
-          {% for m in errors.password or [] %}
-            <div class="invalid-feedback">{{ m }}</div>
-          {% endfor %}
-        </div>
+        {{ forms.input("token", "Invitation", value=form.token, errors=errors.token,
+                       required=true, help="Filled in for you by the invitation link.") }}
+        {{ forms.input("name", "Name", value=form.name, errors=errors.name,
+                       required=true, maxlength=200) }}
+        {{ forms.input("email", "Email", value=form.email, errors=errors.email,
+                       type="email", required=true, autocomplete="username") }}
+        {{ forms.input("password", "Password", errors=errors.password,
+                       type="password", required=true, minlength=12,
+                       autocomplete="new-password", help="At least 12 characters.") }}
 
         <button type="submit" class="btn btn-primary float-end">
           Create account {{ icons.icon("caret-right") }}

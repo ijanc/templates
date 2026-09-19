@@ -2,7 +2,8 @@
 cargo_generate_version = ">=0.21.1"
 ignore = ["Cargo.lock", "target"]
 # MiniJinja files: their {{ }} and {% %} must reach the project untouched.
-exclude = ["templates/**"]
+# The stylesheets use no placeholders and their comments quote template syntax.
+exclude = ["templates/**", "assets/**"]
 
 [hooks]
 pre = ["hooks/pre.rhai"]

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% import "partials/icons.html" as icons %}
+{% import "partials/forms.html" as forms %}
 {% import "partials/header.html" as header %}
 
 {% block title %}{{ title }} &mdash; {{ app_name }}{% endblock %}
@@ -17,25 +18,10 @@
     <form class="row" method="post" action="{{ action }}" novalidate>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="col-md-6">
-        <div class="mb-3">
-          <label for="name">Name</label>
-          <input type="text" id="name" name="name" maxlength="200" required
-                 dir="auto" value="{{ form.name or '' }}"
-                 class="form-control{% if errors.name %} is-invalid{% endif %}">
-          {% for message in errors.name or [] %}
-            <div class="invalid-feedback">{{ message }}</div>
-          {% endfor %}
-        </div>
-
-        <div class="mb-3">
-          <label for="description">Description</label>
-          <textarea id="description" name="description" rows="5" dir="auto"
-                    class="form-control{% if errors.description %} is-invalid{% endif %}"
-          >{{ form.description or "" }}</textarea>
-          {% for message in errors.description or [] %}
-            <div class="invalid-feedback">{{ message }}</div>
-          {% endfor %}
-        </div>
+        {{ forms.input("name", "Name", value=form.name, errors=errors.name,
+                       required=true, maxlength=200) }}
+        {{ forms.textarea("description", "Description", value=form.description,
+                          errors=errors.description) }}
 
         <button type="submit" class="btn btn-primary float-end">
           Save {{ icons.icon("caret-right") }}

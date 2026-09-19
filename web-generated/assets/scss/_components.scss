@@ -1,0 +1,347 @@
+// Smaller pieces used by one page or another: badges, boxes, grids.
+@use "sass:color";
+
+// A banner across the top of the page naming a non-production site.
+.env-banner {
+  width: 100%;
+  font-weight: bold;
+  color: $white;
+  text-align: center;
+  background: #228800;
+
+  &.production {
+    background: #cc0022;
+  }
+}
+
+// A quiet button on a white background, for secondary actions in a
+// sidebar.
+.btn-white {
+  @extend .btn;
+  padding: .25rem 0;
+  font-size: .9rem;
+  color: $gray-900 !important;
+  background: $white;
+  border-color: $gray-500;
+  transition: border-color .2s linear;
+
+  &:hover {
+    color: $black !important;
+    text-decoration: none;
+    background: $white;
+    border-color: $gray-900;
+  }
+
+  &.btn-sm {
+    padding: .2rem .25rem;
+  }
+}
+
+// Bold, coloured status text with an icon, e.g.
+//   <span class="status text-success">{{ icons.icon("check") }} done</span>
+.status {
+  &.text-success,
+  &.text-danger,
+  &.text-info,
+  &.text-warning {
+    font-weight: bold;
+  }
+}
+
+.status-lg {
+  font-size: 1.5rem;
+}
+
+// A small filled tag for a branch, tag or version name.
+.ref {
+  padding: .1rem .2rem;
+  color: $white !important;
+  border: 1px solid;
+  text-decoration: none;
+
+  &.branch {
+    background: $info;
+    border-color: color.adjust($info, $lightness: -20%);
+  }
+
+  &.tag {
+    background: $primary;
+    border-color: color.adjust($primary, $lightness: -20%);
+  }
+
+  &.tag.annotated {
+    background: $success;
+    border-color: color.adjust($success, $lightness: -20%);
+  }
+}
+
+// Hashtag-style links after an event title.
+.tags {
+  a {
+    color: var(--bs-secondary-color);
+  }
+
+  .tag:not(:last-child) {
+    margin-right: .5rem;
+  }
+}
+
+h5 .tags {
+  font-size: .9rem;
+  font-weight: normal;
+}
+
+// A collapsible box whose summary sits on a grey bar, with a matching
+// border while open. For preferences and other rarely used forms:
+//   <details class="prefs"><summary>Preferences</summary>...</details>
+.prefs {
+  margin: -.5rem 0 .5rem;
+  padding: 0 1rem;
+
+  summary {
+    margin: 0 -1rem;
+    padding: 0 1rem;
+    background: $gray-300;
+  }
+
+  &[open] {
+    border-left: 4px solid $gray-300;
+
+    summary {
+      margin: 0 -1rem 0 calc(-1rem - 4px);
+    }
+  }
+
+  .form-check {
+    padding-left: 0;
+  }
+}
+
+// A box that fills in when opened, for an inline sub-form.
+.assign {
+  &[open] {
+    padding: .5rem;
+    background: $gray-300;
+  }
+}
+
+// A draft rendered next to its form, marked as such in the corner.
+.preview {
+  padding: .5rem;
+  margin: 1rem 0;
+  border: 1px dashed $black;
+
+  .preview-tag {
+    float: right;
+    font-size: .8rem;
+    font-style: italic;
+  }
+}
+
+.event.preview {
+  margin: .5rem 0;
+}
+
+// A table drawn with a CSS grid: every $n cells make a row, every
+// other row is shaded. Set the columns on the element:
+//   <div class="grid-list" style="--columns: auto 1fr auto">
+.grid-list {
+  display: grid;
+  grid-template-columns: var(--columns, 1fr);
+  margin-bottom: 1rem;
+
+  > div {
+    min-width: 0;
+    padding: .1rem .5rem;
+    background: transparent;
+
+    &.id {
+      text-align: right;
+    }
+
+    &.center {
+      text-align: center;
+    }
+
+    &.ellipsis {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &.bordered {
+    border-right: 1px solid $gray-400;
+    border-bottom: 1px solid $gray-400;
+
+    > div {
+      border-top: 1px solid $gray-400;
+      border-left: 1px solid $gray-400;
+    }
+  }
+
+  &.mono {
+    font-family: $font-family-monospace;
+  }
+}
+
+// Shade every other row for the given column count.
+@mixin grid-list-stripes($n) {
+  @for $i from 1 through $n {
+    > div:nth-child(#{$n}n + #{$i}) {
+      grid-column-start: $i;
+    }
+
+    > div:nth-child(#{$n * 2}n + #{$i}) {
+      background: rgba($black, .05);
+    }
+  }
+}
+
+@each $n in (2, 3, 4, 5, 6) {
+  .grid-list.cols-#{$n} {
+    @include grid-list-stripes($n);
+  }
+}
+
+// A to-do list with an icon in front of every entry.
+.checklist {
+  padding-left: 0;
+  list-style: none;
+
+  li:not(:last-child) {
+    margin-bottom: .5rem;
+  }
+
+  .icon {
+    min-width: .9rem;
+    max-width: .9rem;
+  }
+
+  small {
+    display: inline-block;
+    padding-left: 1.2rem;
+  }
+}
+
+// Two events side by side.
+.feature-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  .event {
+    margin: 0;
+  }
+
+  @include media-breakpoint-down(md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// A search box that sits among the tabs of a header.
+input[type="text"].nav-search {
+  padding: .05rem 1rem;
+  background: transparent;
+  border: none;
+  transition: padding .15s ease-in-out;
+
+  &:hover {
+    background: $nav-tabs-background;
+  }
+
+  &:focus {
+    padding: .25rem 1rem;
+    background: $nav-tabs-background;
+    box-shadow: none;
+
+    &::placeholder {
+      color: dimgray;
+    }
+  }
+}
+
+// A progress bar with a dotted goal marker:
+//   <div class="progress">
+//     <div class="progress-bar" style="width: 40%"></div>
+//     <span class="total">40 of 100</span>
+//     <div class="goal" style="left: 75%">goal</div>
+//   </div>
+.progress {
+  position: relative;
+  height: 1.5rem;
+  margin-bottom: .5rem;
+  overflow: visible;
+
+  .goal {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 2.5rem;
+    line-height: 1;
+    color: $danger;
+    border-left: 1px dotted $danger;
+  }
+
+  .total {
+    flex-grow: 1;
+    padding-right: .5rem;
+    color: $black;
+    text-align: right;
+    background: transparent;
+  }
+}
+
+// A compact table without the vertical rules.
+.table-sm tbody td {
+  border-top: none;
+  border-right: none;
+  border-left: none;
+}
+
+// Links that stay in view while a long log scrolls.
+.to-bottom {
+  position: sticky;
+  top: 0;
+}
+
+.to-top {
+  position: sticky;
+  top: 1.5em;
+}
+
+// Truncate with an ellipsis instead of wrapping.
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Definition lists wrap long values rather than overflowing.
+dt {
+  overflow-wrap: break-word;
+}
+
+dd {
+  overflow-wrap: anywhere;
+}
+
+// Mark a required field's label.
+.required {
+  color: $danger;
+}
+
+// The page footer sticks to the bottom on short pages.
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+
+  > footer {
+    display: flex;
+    flex-grow: 1;
+    align-items: flex-end;
+    justify-content: center;
+  }
+}

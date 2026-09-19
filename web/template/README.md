@@ -144,14 +144,24 @@ assets/scss/
   _base.scss       headings, forms, tables, buttons, code blocks
   _nav.scss        top bar, .nav-tabs, .header-tabbed, .subnav
   _events.scss     .event-list, .event, .event-header, .label
+  _components.scss .btn-white, .ref, .prefs, .grid-list, .checklist,
+                   .preview, .nav-search, .progress, .env-banner
   _icons.scss      sizing for the inline icons
   _dark.scss       dark mode for what the partials draw
 ```
 
-`templates/partials/icons.html` holds the icons as a macro
-(`icons.icon("caret-right")`) and `templates/partials/header.html`
-the tabbed page title (`header.header(title, tabs)`); a page using the
-header overrides `body` instead of `content`, since it spans the page.
+Template partials, each a set of macros:
+
+- `icons.html`: inline SVG icons, `icons.icon("caret-right")`
+- `header.html`: the tabbed page title, `header.header(title, tabs)`;
+  a page using it overrides `body` instead of `content`, since the
+  header spans the page
+- `forms.html`: fields with label, help and errors, `forms.input(name,
+  label, value=, errors=)`, `forms.textarea`, `forms.checkbox`,
+  `forms.radios`
+- `nav.html`: the top bar, shared by `base.html` and `base-full.html`
+  (the same layout at full width)
+
 `npm run build` compiles `app.scss` to `static/css/app.css`
 (`just watch-assets` rebuilds on change); that directory is build
 output and is not committed.

@@ -7,6 +7,7 @@ html {
 
 body {
   padding-bottom: 1rem;
+  text-align: initial;
 
   > footer {
     margin-top: 2rem;
@@ -94,6 +95,21 @@ label {
   margin-bottom: .25rem;
 }
 
+input[type="checkbox"] {
+  position: relative;
+  top: 2px;
+}
+
+.form-select:not([multiple]) {
+  height: 2.2rem;
+  padding: 0 .75rem;
+}
+
+// A message inside a form sits apart from the field above it.
+.mb-3 > .alert {
+  margin-top: 1rem;
+}
+
 // Tables
 
 .table {
@@ -103,13 +119,24 @@ label {
   }
 
   tbody td {
+    position: relative;
     padding: $table-cell-padding-y $table-cell-padding-x;
     vertical-align: middle;
+    background-clip: padding-box;
     border: 1px solid var(--bs-table-border-color);
 
     label {
       margin-bottom: 0;
     }
+  }
+
+  // A row that needs attention, e.g. a failed job.
+  tr.danger > td {
+    --bs-table-bg: #{color.adjust($danger, $lightness: 20%)};
+  }
+
+  .btn-danger.btn-fill:hover {
+    background: $danger;
   }
 
   // Tokens and URLs must not widen the table past the page.
@@ -175,6 +202,23 @@ label {
   );
 }
 
+// A button as wide as its column, for the actions in a sidebar.
+.btn-block {
+  display: block;
+  width: 100%;
+}
+
+// A button that fills its table cell edge to edge.
+.btn-fill {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  padding: 0;
+  line-height: 1.6;
+  border: none;
+}
+
 // A button that reads as a link, for forms that must post (sign out).
 .btn-link {
   margin-top: -.1rem;
@@ -185,5 +229,63 @@ label {
 
   &:hover {
     text-decoration: none;
+  }
+}
+
+// Rendered markdown: headings get an anchor that appears on hover.
+.markdown {
+  table {
+    @extend .table;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    position: relative;
+    margin-top: 1em;
+
+    &:first-child {
+      margin-top: 0;
+    }
+
+    > a:first-child {
+      position: absolute;
+      left: -.7em;
+      font-size: inherit;
+      opacity: 0;
+      transition: opacity .15s linear;
+
+      @media (prefers-reduced-motion) {
+        transition: none;
+      }
+    }
+
+    &:hover > a:first-child {
+      opacity: 1;
+    }
+  }
+
+  img {
+    max-width: 100%;
+    margin: 0 .2rem;
+  }
+}
+
+// A profile picture above the profile text.
+.profile .avatar {
+  display: block;
+  max-width: 100%;
+  margin: 0 auto 1rem;
+  border-radius: 5px;
+
+  @include media-breakpoint-down(md) {
+    max-width: 50%;
+  }
+
+  @include media-breakpoint-down(sm) {
+    max-width: 70%;
   }
 }

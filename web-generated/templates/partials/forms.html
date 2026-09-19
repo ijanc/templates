@@ -1,0 +1,79 @@
+{# Form fields with their label, help text and validation errors:
+     {% import "partials/forms.html" as forms %}
+     {{ forms.input("email", "Email", value=form.email, errors=errors.email,
+                    type="email", required=true, autocomplete="username") }}
+     {{ forms.textarea("body", "Body", value=form.body, errors=errors.body) }}
+   `attrs` is pasted into the tag as is, for anything not covered. #}
+{% macro input(name, label, value="", errors=none, type="text", required=false,
+               help="", placeholder="", autocomplete="", autofocus=false,
+               maxlength=none, minlength=none, readonly=false, attrs="") %}
+<div class="mb-3">
+  <label for="{{ name }}">{{ label }}</label>
+  <input type="{{ type }}" id="{{ name }}" name="{{ name }}" dir="auto"
+         value="{{ value or '' }}"
+         class="form-control{% if errors %} is-invalid{% endif %}"
+         {% if required %}required{% endif %}
+         {% if readonly %}readonly{% endif %}
+         {% if autofocus %}autofocus{% endif %}
+         {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+         {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+         {% if maxlength is not none %}maxlength="{{ maxlength }}"{% endif %}
+         {% if minlength is not none %}minlength="{{ minlength }}"{% endif %}
+         {% if help %}aria-describedby="{{ name }}-help"{% endif %}
+         {{ attrs|safe }}>
+  {% if help %}
+    <small id="{{ name }}-help" class="form-text text-muted">{{ help }}</small>
+  {% endif %}
+  {% for message in errors or [] %}
+    <div class="invalid-feedback">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro textarea(name, label, value="", errors=none, rows=5, required=false,
+                  help="", placeholder="", attrs="") %}
+<div class="mb-3">
+  <label for="{{ name }}">{{ label }}</label>
+  <textarea id="{{ name }}" name="{{ name }}" rows="{{ rows }}" dir="auto"
+            class="form-control{% if errors %} is-invalid{% endif %}"
+            {% if required %}required{% endif %}
+            {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+            {% if help %}aria-describedby="{{ name }}-help"{% endif %}
+            {{ attrs|safe }}>{{ value or "" }}</textarea>
+  {% if help %}
+    <small id="{{ name }}-help" class="form-text text-muted">{{ help }}</small>
+  {% endif %}
+  {% for message in errors or [] %}
+    <div class="invalid-feedback">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{# A checkbox with its label on the same line. #}
+{% macro checkbox(name, label, checked=false, help="") %}
+<div class="mb-3">
+  <label class="form-check-label">
+    <input type="checkbox" name="{{ name }}" id="{{ name }}" value="1"
+           {% if checked %}checked{% endif %}> {{ label }}
+    {% if help %}
+      <small class="form-text text-muted">{{ help }}</small>
+    {% endif %}
+  </label>
+</div>
+{% endmacro %}
+
+{# Radio buttons in a row, each option (value, label, help). #}
+{% macro radios(name, legend, options, selected=none, inline=true) %}
+<fieldset class="mb-3">
+  <legend>{{ legend }}</legend>
+  {% for value, label, help in options %}
+    <div class="form-check{% if inline %} form-check-inline{% endif %}">
+      <label class="form-check-label" {% if help %}title="{{ help }}"{% endif %}>
+        <input class="form-check-input" type="radio" name="{{ name }}"
+               value="{{ value }}" {% if value == selected %}checked{% endif %}>
+        {{ label }}
+      </label>
+    </div>
+  {% endfor %}
+</fieldset>
+{% endmacro %}

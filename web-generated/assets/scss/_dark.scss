@@ -3,6 +3,15 @@
 @use "sass:color";
 
 $darker: color.adjust($gray-900, $lightness: -6%);
+$link-dark: color.adjust($primary, $lightness: 10%);
+
+// Alerts keep their light backgrounds, deepened so black text reads.
+@mixin alert-dark($bg, $border, $link) {
+  --bs-alert-color: #{$black};
+  --bs-alert-bg: #{$bg};
+  --bs-alert-border-color: #{$border};
+  --bs-alert-link-color: #{$link};
+}
 
 @include color-mode(dark) {
   h3,
@@ -15,9 +24,57 @@ $darker: color.adjust($gray-900, $lightness: -6%);
     background: $darker;
   }
 
+  code {
+    color: $white;
+  }
+
+  .text-success {
+    color: #2bb34b !important;
+  }
+
+  .text-danger {
+    color: #ff3e3e !important;
+  }
+
   .event {
     color: $white;
     background: $darker;
+
+    a:not(.btn) {
+      color: $link-dark;
+    }
+
+    .text-muted {
+      color: $gray-400 !important;
+    }
+  }
+
+  .alert-info {
+    @include alert-dark(#83ccd9, #97d5df, #004a99);
+  }
+
+  .alert-success {
+    @include alert-dark(#8ccf9c, #9fd7ac, #004a99);
+  }
+
+  .alert-danger {
+    @include alert-dark(#efa3aa, #ed9ba3, #003d80);
+  }
+
+  .alert-warning {
+    @include alert-dark(#ffe9a4, #ffe187, #0056b3);
+  }
+
+  .navbar {
+    --bs-navbar-color: #78828a;
+    --bs-navbar-hover-color: #{$white};
+    --bs-navbar-active-color: #{$white};
+    --bs-navbar-brand-color: #{$white};
+    --bs-navbar-brand-hover-color: #{$white};
+
+    .nav-link:focus {
+      color: $gray-500;
+    }
   }
 
   .label {
@@ -30,6 +87,7 @@ $darker: color.adjust($gray-900, $lightness: -6%);
     background: $darker;
     border-color: $gray-700;
 
+    &:active,
     &:focus {
       color: $white;
       background: $gray-900;
@@ -47,6 +105,10 @@ $darker: color.adjust($gray-900, $lightness: -6%);
     @include btn-type($gray-900, $white, $gray-700, $darker);
   }
 
+  .btn-link {
+    color: $link-dark;
+  }
+
   .btn-primary,
   .btn-success,
   .btn-danger,
@@ -59,6 +121,16 @@ $darker: color.adjust($gray-900, $lightness: -6%);
   .table {
     --bs-table-bg: #{$gray-800};
     --bs-table-border-color: #{$gray-900};
+
+    tr.danger > td {
+      --bs-table-bg: #{color.adjust($danger, $lightness: -20%)};
+    }
+  }
+
+  .dropdown-menu {
+    --bs-dropdown-bg: #{$darker};
+    --bs-dropdown-border-color: #{$gray-700};
+    --bs-dropdown-link-hover-bg: #{$gray-900};
   }
 
   .nav-tabs {
@@ -89,6 +161,97 @@ $darker: color.adjust($gray-900, $lightness: -6%);
       a {
         color: $white;
       }
+    }
+
+    .nav .nav-link[disabled] {
+      color: gray;
+    }
+  }
+
+  .project-nav + .resource-nav {
+    background: $darker;
+
+    .nav-item .active,
+    .nav-item .nav-link:hover {
+      background: $gray-900 !important;
+    }
+  }
+
+  .project-nav ~ .header-extension {
+    background: transparent;
+    border-bottom: 2px solid $darker;
+
+    .nav-item .active,
+    .nav-item .nav-link:hover {
+      color: $white;
+      border-bottom: 2px solid $gray-500;
+    }
+  }
+
+  .btn-white {
+    color: $white !important;
+    background: $darker;
+
+    &:hover {
+      color: $white !important;
+      background: $gray-900;
+      border-color: $gray-400;
+    }
+  }
+
+  .prefs {
+    summary {
+      background: $gray-800;
+    }
+
+    &[open] {
+      border-color: $gray-800;
+    }
+  }
+
+  .assign[open] {
+    background: $gray-800;
+  }
+
+  .preview {
+    border-color: $gray-400;
+  }
+
+  .grid-list {
+    &.bordered,
+    &.bordered > div {
+      border-color: $gray-600;
+    }
+
+    @each $n in (2, 3, 4, 5, 6) {
+      @for $i from 1 through $n {
+        &.cols-#{$n} > div:nth-child(#{$n * 2}n + #{$i}) {
+          background: color.adjust($gray-900, $lightness: 5%);
+        }
+      }
+    }
+  }
+
+  input[type="text"].nav-search {
+    &:hover,
+    &:focus {
+      background: $darker;
+    }
+
+    &::placeholder {
+      color: $gray-400;
+    }
+
+    &:focus::placeholder {
+      color: $gray-600;
+    }
+  }
+
+  .progress {
+    background: $black;
+
+    .total {
+      color: $white;
     }
   }
 

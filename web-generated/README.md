@@ -16,7 +16,7 @@ Accounts are invite only, with passwords hashed using Argon2.
 ```sh
 cp .env.example .env
 npm install
-npm run build   # static/css/app.css and static/js
+npm run build   # static/css/app.css
 just run
 ```
 
@@ -38,7 +38,7 @@ Pages render without the stylesheet, so `cargo test` needs no npm.
 | `/invites`           | list and create invitations          |
 | `/healthz`           | liveness, JSON                       |
 | `/readyz`            | readiness, checks the store          |
-| `/static`            | stylesheet and script                |
+| `/static`            | stylesheet                           |
 
 Every form carries a `csrf_token` matching the one in the session;
 `POST`, `PUT`, `PATCH` and `DELETE` without it answer `403`. Writes
@@ -85,10 +85,39 @@ Read from the environment; `.env` is loaded first.
 
 ## Assets
 
-`assets/scss/app.scss` imports Bootstrap; override its variables in the
-`with (...)` block. `npm run build` compiles it to `static/css/app.css`
-and copies the Bootstrap bundle to `static/js/`. Both directories are
-build output and are not committed.
+The stylesheet is a trimmed Bootstrap with a flat, text-first look:
+square corners, underlined links, compact forms and tables, tabs on a
+thick bar, and a dark theme that follows the system preference. No
+script is shipped.
+
+```
+assets/scss/
+  app.scss         Bootstrap imports, then the partials below
+  _variables.scss  palette, fonts, sizes; read before Bootstrap
+  _base.scss       headings, forms, tables, buttons, code blocks
+  _nav.scss        top bar, .nav-tabs, .header-tabbed, .subnav
+  _events.scss     .event-list, .event, .event-header, .label
+  _components.scss .btn-white, .ref, .prefs, .grid-list, .checklist,
+                   .preview, .nav-search, .progress, .env-banner
+  _icons.scss      sizing for the inline icons
+  _dark.scss       dark mode for what the partials draw
+```
+
+Template partials, each a set of macros:
+
+- `icons.html`: inline SVG icons, `icons.icon("caret-right")`
+- `header.html`: the tabbed page title, `header.header(title, tabs)`;
+  a page using it overrides `body` instead of `content`, since the
+  header spans the page
+- `forms.html`: fields with label, help and errors, `forms.input(name,
+  label, value=, errors=)`, `forms.textarea`, `forms.checkbox`,
+  `forms.radios`
+- `nav.html`: the top bar, shared by `base.html` and `base-full.html`
+  (the same layout at full width)
+
+`npm run build` compiles `app.scss` to `static/css/app.css`
+(`just watch-assets` rebuilds on change); that directory is build
+output and is not committed.
 
 ## Docker
 
