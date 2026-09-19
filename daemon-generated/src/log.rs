@@ -21,6 +21,8 @@ const FACILITY: u8 = 3 << 3;
 
 static IDENT: OnceLock<&'static str> = OnceLock::new();
 static PROCNAME: OnceLock<&'static str> = OnceLock::new();
+/// Level chosen with `-v` at startup, restored by `log verbose`.
+static STARTUP: OnceLock<LevelFilter> = OnceLock::new();
 
 /// Log level for a `-v` count.
 pub fn level(verbose: u8) -> LevelFilter {
@@ -49,6 +51,7 @@ pub fn init(ident: &'static str, debug: bool, verbose: u8) {
     } else {
         set_sink(Sink::Stderr);
     }
+    let _ = STARTUP.set(level(verbose));
     log::set_max_level(level(verbose));
 }
 
@@ -74,9 +77,11 @@ pub fn crit(msg: &str) {
 }
 
 /// Toggle debug logging at runtime.
+/// On, the level is at least debug and never below the startup one.
 pub fn set_verbose(on: bool) {
+    let startup = STARTUP.get().copied().unwrap_or(LevelFilter::Info);
     log::set_max_level(if on {
-        LevelFilter::Debug
+        startup.max(LevelFilter::Debug)
     } else {
         LevelFilter::Info
     });

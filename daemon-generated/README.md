@@ -16,6 +16,10 @@ descriptor. With `user` set the engine runs as that user inside a `chroot`. The
 control socket is created by the parent, mode 0660 owned by root; only `show
 status` is answered for other users.
 
+Both processes call `pledge(2)` and `unveil(2)` on OpenBSD. On Linux the
+`landlock` cargo feature applies the same file system restrictions with
+Landlock; elsewhere the calls are no-ops.
+
 Configuration is TOML; there is no `-D macro=value` option.
 
 ## License

@@ -78,6 +78,25 @@ If the engine exits unexpectedly the parent logs the event and exits
 with status 1.
 If the parent goes away the engine exits.
 .Pp
+On
+.Ox
+both processes are restricted with
+.Xr pledge 2
+and
+.Xr unveil 2 .
+The parent keeps
+.Dq stdio rpath cpath proc
+with only the configuration file and the control socket visible.
+The engine runs with
+.Dq stdio unix recvfd
+until the parent has handed over the control socket and the
+configuration, then
+.Dq stdio unix ,
+with no file system access at all.
+On Linux, when built with the
+.Cm landlock
+feature, the same file system restrictions are applied with Landlock.
+.Pp
 The following signals are handled:
 .Bl -tag -width SIGTERM
 .It Dv SIGHUP

@@ -16,6 +16,13 @@ postcard = { version = "1", default-features = false, features = ["use-std"] }
 serde = { version = "1.0.229", features = ["derive"] }
 toml = "1.1.6"
 
+[target.'cfg(target_os = "linux")'.dependencies]
+landlock = { version = "0.4", optional = true }
+
+[features]
+# Restrict file system access with Landlock on Linux; see src/sandbox.rs.
+landlock = ["dep:landlock"]
+
 [lib]
 name = "daemon_generated"
 path = "src/lib.rs"

@@ -20,6 +20,7 @@ use {{crate_name}}::{
     error::{OrFatal, errx, fatal, strerror},
     imsg, log as flog,
     proc::{self, Child, ChildOpts, ProcId},
+    sandbox,
 };
 
 fn usage() -> ! {
@@ -278,6 +279,17 @@ fn main() {
         .compose(imsg::IMSG_CONTROLFD, 0, None, Some(ctl_fd), &())
         .or_fatal();
     state.send_config();
+    // The descriptor must be out before giving up the right to send it.
+    state.engine.ibuf.flush().or_fatal();
+
+    // Reads the configuration file, unlinks the socket, signals and
+    // waits for the engine.
+    if state.conf_path.exists() {
+        sandbox::unveil(&state.conf_path, "r").or_fatal();
+    }
+    sandbox::unveil(&state.config.socket, "c").or_fatal();
+    sandbox::unveil_lock().or_fatal();
+    sandbox::pledge("stdio rpath cpath proc").or_fatal();
 
     let code = run(&mut state, &signals);
     state.shutdown(code);

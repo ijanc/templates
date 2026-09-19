@@ -8,6 +8,7 @@ use daemon_generated::{
     error::strerror,
     imsg,
     ipc::{Request, Response, Status},
+    sandbox,
 };
 
 fn usage() -> ! {
@@ -159,6 +160,10 @@ fn main() {
         eprintln!("{CTL}: connect: {}: {}", socket.display(), strerror(&e));
         process::exit(1);
     });
+    if let Err(e) = sandbox::pledge("stdio") {
+        eprintln!("{CTL}: pledge: {}", strerror(&e));
+        process::exit(1);
+    }
     let r = req
         .encode()
         .and_then(|buf| stream.write_all(&buf).and_then(|()| stream.flush()));

@@ -5,7 +5,7 @@
 //! periodic task with the configuration the parent sends over.
 
 use std::{
-    path::PathBuf,
+    path::{Path, PathBuf},
     process,
     time::{Duration, Instant},
 };
@@ -20,6 +20,7 @@ use crate::{
     ipc::{Request, Response, Status},
     log as flog,
     proc::{self, ProcId},
+    sandbox,
 };
 
 pub struct Opts {
@@ -112,6 +113,9 @@ impl State {
                 if self.config.is_some() {
                     self.reloads += 1;
                     log::info!("configuration reloaded");
+                } else if self.ctl.is_some() {
+                    // Everything the parent hands over has arrived.
+                    sandbox::pledge("stdio unix").or_fatal();
                 }
                 self.config = Some(cfg);
                 self.reconfigured = true;
@@ -150,6 +154,10 @@ pub fn main(opts: Opts) -> ! {
             .map_err(|e| format!("can't drop privileges: {}", strerror(&e)))
             .or_fatal();
     }
+    // No file system at all; the control socket arrives as a descriptor.
+    sandbox::unveil(Path::new("/"), "").or_fatal();
+    sandbox::unveil_lock().or_fatal();
+    sandbox::pledge("stdio unix recvfd").or_fatal();
 
     // SAFETY: first use of descriptor 3 in this process.
     let mut parent = unsafe { proc::parent_socket() }.or_fatal();

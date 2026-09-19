@@ -10,6 +10,7 @@ pub mod imsg;
 pub mod ipc;
 pub mod log;
 pub mod proc;
+pub mod sandbox;
 
 /// Daemon program name, used for log identity and diagnostics.
 pub const DAEMON: &str = "{{daemon_name}}";

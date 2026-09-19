@@ -35,7 +35,9 @@ The commands are as follows:
 .It Cm log brief
 Disable debug logging.
 .It Cm log verbose
-Enable debug logging.
+Enable debug logging, restoring the level given with
+.Fl v
+at startup if that was higher.
 .It Cm reload
 Reload the configuration file.
 .It Cm show status
@@ -44,6 +46,12 @@ configuration.
 .It Cm stop
 Terminate the daemon.
 .El
+.Pp
+Only
+.Cm show status
+is available to users other than root and the one
+.Xr daemon-generatedd 8
+runs as.
 .Sh FILES
 .Bl -tag -width /var/run/daemon-generatedd.sock -compact
 .It Pa /var/run/daemon-generatedd.sock
