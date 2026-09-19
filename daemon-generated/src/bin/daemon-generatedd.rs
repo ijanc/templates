@@ -1,21 +1,25 @@
 // SPDX-License-Identifier: ISC
 // SPDX-FileCopyrightText: 2026 your name <author@example.com>
 
+//! The privileged parent: reads the configuration, spawns the engine,
+//! hands it the control socket and supervises it.
+
 use std::{
-    env,
-    path::PathBuf,
+    env, fs,
+    os::unix::process::ExitStatusExt,
+    path::{Path, PathBuf},
     process,
-    time::{Duration, Instant},
 };
 
 use daemon_generated::{
     CONF_FILE, DAEMON,
     config::Config,
-    control::Control,
-    daemon::{self, Passwd, Signal, Signals},
-    error::{OrFatal, fatal, strerror},
-    ipc::{Request, Response, Status},
-    log as flog,
+    control, daemon,
+    daemon::{Passwd, Signal, Signals},
+    engine,
+    error::{OrFatal, errx, fatal, strerror},
+    imsg, log as flog,
+    proc::{self, Child, ChildOpts, ProcId},
 };
 
 fn usage() -> ! {
@@ -29,17 +33,26 @@ struct Opts {
     verbose: u8,
     conf: Option<PathBuf>,
     socket: Option<PathBuf>,
+    /// Hidden: run as this child process.
+    proc_id: Option<ProcId>,
+    /// Hidden: child drops to this user.
+    user: Option<String>,
+    /// Hidden: child chroots here.
+    chroot: Option<PathBuf>,
 }
 
 fn parse_args() -> Opts {
     let args: Vec<String> = env::args().collect();
-    let mut p = getopt::Parser::new(&args, "df:ns:v");
+    let mut p = getopt::Parser::new(&args, "df:ns:vP:u:C:");
     let mut o = Opts {
         debug: false,
         check: false,
         verbose: 0,
         conf: None,
         socket: None,
+        proc_id: None,
+        user: None,
+        chroot: None,
     };
     loop {
         match p.next().transpose() {
@@ -49,6 +62,12 @@ fn parse_args() -> Opts {
             Ok(Some(getopt::Opt('n', _))) => o.check = true,
             Ok(Some(getopt::Opt('s', Some(s)))) => o.socket = Some(s.into()),
             Ok(Some(getopt::Opt('v', _))) => o.verbose += 1,
+            Ok(Some(getopt::Opt('P', Some(t)))) => {
+                o.proc_id =
+                    Some(ProcId::from_title(&t).unwrap_or_else(|| usage()));
+            }
+            Ok(Some(getopt::Opt('u', Some(u)))) => o.user = Some(u),
+            Ok(Some(getopt::Opt('C', Some(c)))) => o.chroot = Some(c.into()),
             Ok(Some(_)) => unreachable!(),
             Err(e) => {
                 eprintln!("{DAEMON}: {e}");
@@ -62,108 +81,162 @@ fn parse_args() -> Opts {
     o
 }
 
-/// Daemon state shared with the control dispatcher.
+/// Parent state.
 struct State {
     config: Config,
     conf_path: PathBuf,
     conf_is_default: bool,
     socket_override: Option<PathBuf>,
-    started: Instant,
-    reloads: u32,
-    quit: bool,
+    engine: Child,
 }
 
 impl State {
-    fn load(&self) -> anyhow::Result<Config> {
-        let mut cfg = Config::load(&self.conf_path, self.conf_is_default)?;
-        if let Some(s) = &self.socket_override {
-            cfg.socket = s.clone();
+    fn load(
+        conf_path: &Path,
+        conf_is_default: bool,
+        socket_override: Option<&Path>,
+    ) -> anyhow::Result<Config> {
+        let mut cfg = Config::load(conf_path, conf_is_default)?;
+        if let Some(s) = socket_override {
+            cfg.socket = s.to_path_buf();
         }
         Ok(cfg)
     }
 
-    /// Re-read the configuration; keep the old one on failure.
-    fn reload(&mut self) -> Result<(), String> {
-        match self.load() {
+    /// Re-read the configuration and push it to the engine; keep the
+    /// old one on failure.
+    /// `peerid` identifies the control client to answer, if any.
+    fn reload(&mut self, peerid: Option<u32>) {
+        let r = Self::load(
+            &self.conf_path,
+            self.conf_is_default,
+            self.socket_override.as_deref(),
+        );
+        match r {
             Ok(cfg) => {
                 if cfg.socket != self.config.socket {
                     log::warn!("socket change requires restart");
                 }
-                if cfg.user != self.config.user {
-                    log::warn!("user change requires restart");
+                if cfg.user != self.config.user
+                    || cfg.chroot != self.config.chroot
+                {
+                    log::warn!("user or chroot change requires restart");
                 }
                 self.config = cfg;
-                self.reloads += 1;
+                self.send_config();
+                if let Some(id) = peerid {
+                    self.ctl_ok(id);
+                }
                 log::info!("configuration reloaded");
-                Ok(())
             }
             Err(e) => {
                 log::error!("{e:#}");
                 log::error!("configuration reload failed");
-                Err(e.to_string())
+                if let Some(id) = peerid {
+                    self.compose(imsg::IMSG_CTL_FAIL, id, &e.to_string());
+                }
             }
         }
     }
 
-    fn status(&self) -> Status {
-        Status {
-            pid: process::id(),
-            uptime_secs: self.started.elapsed().as_secs(),
-            config: self.config.clone(),
-            verbose: flog::is_verbose(),
-            reloads: self.reloads,
-        }
+    fn send_config(&mut self) {
+        let cfg = self.config.clone();
+        self.compose(imsg::IMSG_RECONF_CONF, 0, &cfg);
+        self.compose(imsg::IMSG_RECONF_END, 0, &());
     }
 
-    fn dispatch(&mut self, req: Request) -> Response {
-        match req {
-            Request::ShowStatus => Response::Status(self.status()),
-            Request::LogVerbose(on) => {
+    fn ctl_ok(&mut self, peerid: u32) {
+        self.compose(imsg::IMSG_CTL_OK, peerid, &());
+    }
+
+    fn compose<T: serde::Serialize>(
+        &mut self,
+        typ: u32,
+        peerid: u32,
+        data: &T,
+    ) {
+        self.engine
+            .ibuf
+            .compose(typ, peerid, None, None, data)
+            .or_fatal();
+    }
+
+    /// Handle a message from the engine.
+    fn engine_msg(&mut self, m: &imsg::Imsg) -> Option<i32> {
+        match m.hdr.typ {
+            imsg::IMSG_CTL_RELOAD => self.reload(Some(m.hdr.peerid)),
+            imsg::IMSG_CTL_VERBOSE => {
+                let on: bool = m.get().or_fatal();
                 flog::set_verbose(on);
-                log::info!(
-                    "log verbosity {}",
-                    if on { "verbose" } else { "brief" }
-                );
-                Response::Ok
             }
-            Request::Reload => match self.reload() {
-                Ok(()) => Response::Ok,
-                Err(e) => Response::Fail(e),
-            },
-            Request::Shutdown => {
-                self.quit = true;
-                Response::Ok
+            imsg::IMSG_CTL_SHUTDOWN => {
+                log::debug!("shutdown requested");
+                return Some(0);
             }
+            t => log::warn!("unexpected imsg {t} from engine"),
         }
+        None
+    }
+
+    /// Stop the engine, wait for it and exit with `code`.
+    fn shutdown(mut self, code: i32) -> ! {
+        self.engine.terminate();
+        match self.engine.wait() {
+            Ok(st) if st.success() => log::debug!("engine exited"),
+            Ok(st) => match st.signal() {
+                Some(sig) => log::warn!("engine terminated; signal {sig}"),
+                None => log::warn!("engine exited abnormally"),
+            },
+            Err(e) => log::warn!("wait: {}", strerror(&e)),
+        }
+        let _ = fs::remove_file(&self.config.socket);
+        log::info!("terminating");
+        process::exit(code);
     }
 }
 
 fn main() {
     flog::init_stderr(DAEMON, 0);
+    let argv0 = env::args().next().unwrap_or_default();
     let opts = parse_args();
     log::set_max_level(flog::level(opts.verbose));
 
+    if let Some(ProcId::Engine) = opts.proc_id {
+        let privdrop = match (opts.user, opts.chroot) {
+            (Some(u), Some(c)) => Some((u, c)),
+            (None, None) => None,
+            _ => usage(),
+        };
+        engine::main(engine::Opts {
+            debug: opts.debug,
+            verbose: opts.verbose,
+            privdrop,
+        });
+    }
+    if opts.proc_id.is_some() || opts.user.is_some() || opts.chroot.is_some() {
+        usage();
+    }
+    flog::procinit(ProcId::Parent.title());
+    proc::init_exec_path(&argv0).or_errx();
+
     let conf_is_default = opts.conf.is_none();
     let conf_path = opts.conf.unwrap_or_else(|| CONF_FILE.into());
-    let mut state = State {
-        config: Config::default(),
-        conf_path,
-        conf_is_default,
-        socket_override: opts.socket,
-        started: Instant::now(),
-        reloads: 0,
-        quit: false,
-    };
-    state.config = state.load().or_fatal();
+    let config =
+        State::load(&conf_path, conf_is_default, opts.socket.as_deref())
+            .or_errx();
 
     if opts.check {
         eprintln!("configuration OK");
         process::exit(0);
     }
 
-    Control::check(&state.config.socket).or_fatal();
+    control::check(&config.socket).or_errx();
 
-    let pw = state.config.user.as_deref().map(lookup_user);
+    let privdrop = config.user.as_deref().map(|u| {
+        let pw = lookup_user(u);
+        let dir = config.chroot.clone().unwrap_or(pw.dir);
+        (u.to_string(), dir)
+    });
 
     flog::init(DAEMON, opts.debug, opts.verbose);
     if !opts.debug {
@@ -171,78 +244,109 @@ fn main() {
     }
     log::info!("startup");
 
-    let signals = Signals::install().or_fatal();
-    let mut ctl = Control::init(&state.config.socket).or_fatal();
+    let signals = Signals::install(&[
+        Signal::Hup,
+        Signal::Term,
+        Signal::Int,
+        Signal::Chld,
+    ])
+    .or_fatal();
 
-    if let Some(pw) = pw {
-        ctl.chown(pw).or_fatal();
-        daemon::drop_privs(pw)
-            .map_err(|e| format!("can't drop privileges: {}", strerror(&e)))
-            .or_fatal();
-    }
+    let engine = proc::spawn(
+        ProcId::Engine,
+        &ChildOpts {
+            debug: opts.debug,
+            verbose: opts.verbose,
+            privdrop,
+        },
+    )
+    .map_err(|e| format!("spawn engine: {}", strerror(&e)))
+    .or_fatal();
 
-    run(&mut state, &signals, &mut ctl);
+    let mut state = State {
+        config,
+        conf_path,
+        conf_is_default,
+        socket_override: opts.socket,
+        engine,
+    };
 
-    drop(ctl);
-    log::info!("terminating");
-    process::exit(0);
+    let ctl_fd = control::open(&state.config.socket).or_fatal();
+    state
+        .engine
+        .ibuf
+        .compose(imsg::IMSG_CONTROLFD, 0, None, Some(ctl_fd), &())
+        .or_fatal();
+    state.send_config();
+
+    let code = run(&mut state, &signals);
+    state.shutdown(code);
 }
 
 fn lookup_user(name: &str) -> Passwd {
     if !daemon::is_root() {
-        fatal("need root privileges");
+        errx("need root privileges");
     }
     daemon::getpwnam(name)
-        .unwrap_or_else(|| fatal(format!("unknown user {name}")))
+        .unwrap_or_else(|| errx(format!("unknown user {name}")))
 }
 
-fn run(state: &mut State, signals: &Signals, ctl: &mut Control) {
-    let mut next_tick = Instant::now() + interval(state);
+/// Main loop; returns the exit code.
+fn run(state: &mut State, signals: &Signals) -> i32 {
     let mut fds = Vec::new();
-    while !state.quit {
+    loop {
         fds.clear();
         fds.push(daemon::pollfd(signals.fd(), libc::POLLIN));
-        ctl.fill(&mut fds);
-
-        let now = Instant::now();
-        let mut timeout =
-            next_tick.saturating_duration_since(now).as_millis() as i32;
-        if let Some(b) = ctl.backoff_ms() {
-            timeout = timeout.min(b);
-        }
-        if let Err(e) = daemon::poll(&mut fds, timeout) {
+        fds.push(daemon::pollfd(
+            state.engine.ibuf.fd(),
+            state.engine.ibuf.events(),
+        ));
+        if let Err(e) = daemon::poll(&mut fds, -1) {
             fatal(format!("poll: {}", strerror(&e)));
         }
 
         if fds[0].revents & libc::POLLIN != 0 {
             for sig in signals.drain() {
                 match sig {
-                    Signal::Hup => {
-                        let _ = state.reload();
-                        next_tick = Instant::now() + interval(state);
-                    }
+                    Signal::Hup => state.reload(None),
                     Signal::Term | Signal::Int => {
                         log::debug!("{sig:?} received");
-                        state.quit = true;
+                        return 0;
+                    }
+                    Signal::Chld => {
+                        if let Ok(Some(_)) = state.engine.try_wait() {
+                            log::warn!("lost child: engine");
+                            return 1;
+                        }
                     }
                 }
             }
         }
 
-        ctl.handle(&fds[1..], &mut |req| state.dispatch(req));
-
-        if Instant::now() >= next_tick {
-            tick(state);
-            next_tick += interval(state);
+        if fds[1].revents & (libc::POLLIN | libc::POLLHUP | libc::POLLERR) != 0
+        {
+            match state.engine.ibuf.read() {
+                Ok(true) => {}
+                Ok(false) => {
+                    log::warn!("lost child: engine");
+                    return 1;
+                }
+                Err(e) => fatal(format!("engine read: {}", strerror(&e))),
+            }
+            loop {
+                match state.engine.ibuf.get() {
+                    Ok(Some(m)) => {
+                        if let Some(code) = state.engine_msg(&m) {
+                            return code;
+                        }
+                    }
+                    Ok(None) => break,
+                    Err(e) => fatal(format!("engine imsg: {e}")),
+                }
+            }
+        }
+        if let Err(e) = state.engine.ibuf.write() {
+            fatal(format!("engine write: {}", strerror(&e)));
         }
     }
-}
-
-fn interval(state: &State) -> Duration {
-    Duration::from_secs(state.config.interval)
-}
-
-/// Example periodic workload; replace with the real one.
-fn tick(state: &State) {
-    log::debug!("tick, uptime {}s", state.started.elapsed().as_secs());
 }

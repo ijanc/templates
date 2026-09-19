@@ -6,7 +6,11 @@
 use std::{
     ffi::CString,
     io,
-    os::fd::{AsRawFd, FromRawFd, OwnedFd, RawFd},
+    os::{
+        fd::{AsRawFd, FromRawFd, OwnedFd, RawFd},
+        unix::ffi::OsStrExt,
+    },
+    path::{Path, PathBuf},
     process,
     sync::atomic::{AtomicI32, Ordering},
 };
@@ -49,6 +53,28 @@ pub enum Signal {
     Hup,
     Term,
     Int,
+    Chld,
+}
+
+impl Signal {
+    fn signo(self) -> libc::c_int {
+        match self {
+            Self::Hup => libc::SIGHUP,
+            Self::Term => libc::SIGTERM,
+            Self::Int => libc::SIGINT,
+            Self::Chld => libc::SIGCHLD,
+        }
+    }
+
+    fn from_signo(signo: libc::c_int) -> Option<Self> {
+        match signo {
+            libc::SIGHUP => Some(Self::Hup),
+            libc::SIGTERM => Some(Self::Term),
+            libc::SIGINT => Some(Self::Int),
+            libc::SIGCHLD => Some(Self::Chld),
+            _ => None,
+        }
+    }
 }
 
 /// Self-pipe: handlers write the signal number, the main loop reads it.
@@ -71,14 +97,14 @@ pub struct Signals {
 }
 
 impl Signals {
-    /// Install handlers for SIGHUP, SIGTERM and SIGINT; ignore SIGPIPE.
-    pub fn install() -> io::Result<Self> {
+    /// Route `handled` through the pipe; ignore SIGPIPE.
+    pub fn install(handled: &[Signal]) -> io::Result<Self> {
         let (rd, wr) = pipe()?;
         PIPE_WR.store(wr.as_raw_fd(), Ordering::Relaxed);
-        for signo in [libc::SIGHUP, libc::SIGTERM, libc::SIGINT] {
-            sigaction(signo, handler as *const () as libc::sighandler_t)?;
+        for sig in handled {
+            sigaction(sig.signo(), handler as *const () as libc::sighandler_t)?;
         }
-        sigaction(libc::SIGPIPE, libc::SIG_IGN)?;
+        ignore(libc::SIGPIPE)?;
         Ok(Self { rd, _wr: wr })
     }
 
@@ -99,11 +125,8 @@ impl Signals {
                 break;
             }
             for &b in &buf[..n as usize] {
-                match libc::c_int::from(b) {
-                    libc::SIGHUP => out.push(Signal::Hup),
-                    libc::SIGTERM => out.push(Signal::Term),
-                    libc::SIGINT => out.push(Signal::Int),
-                    _ => {}
+                if let Some(sig) = Signal::from_signo(libc::c_int::from(b)) {
+                    out.push(sig);
                 }
             }
         }
@@ -135,14 +158,40 @@ pub fn set_nonblock_cloexec(fd: RawFd) -> io::Result<()> {
         {
             return Err(io::Error::last_os_error());
         }
-        let fd_fl = libc::fcntl(fd, libc::F_GETFD);
-        if fd_fl == -1
-            || libc::fcntl(fd, libc::F_SETFD, fd_fl | libc::FD_CLOEXEC) == -1
+    }
+    set_cloexec(fd)
+}
+
+pub fn set_cloexec(fd: RawFd) -> io::Result<()> {
+    // SAFETY: fcntl on a descriptor we own.
+    unsafe {
+        let fl = libc::fcntl(fd, libc::F_GETFD);
+        if fl == -1
+            || libc::fcntl(fd, libc::F_SETFD, fl | libc::FD_CLOEXEC) == -1
         {
             return Err(io::Error::last_os_error());
         }
     }
     Ok(())
+}
+
+/// Clear close-on-exec so `fd` survives `execve(2)`.
+pub fn clear_cloexec(fd: RawFd) -> io::Result<()> {
+    // SAFETY: fcntl on a descriptor we own.
+    unsafe {
+        let fl = libc::fcntl(fd, libc::F_GETFD);
+        if fl == -1
+            || libc::fcntl(fd, libc::F_SETFD, fl & !libc::FD_CLOEXEC) == -1
+        {
+            return Err(io::Error::last_os_error());
+        }
+    }
+    Ok(())
+}
+
+/// Ignore a signal.
+pub fn ignore(signo: libc::c_int) -> io::Result<()> {
+    sigaction(signo, libc::SIG_IGN)
 }
 
 fn sigaction(signo: libc::c_int, action: libc::sighandler_t) -> io::Result<()> {
@@ -159,10 +208,12 @@ fn sigaction(signo: libc::c_int, action: libc::sighandler_t) -> io::Result<()> {
     Ok(())
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Passwd {
     pub uid: libc::uid_t,
     pub gid: libc::gid_t,
+    /// Home directory, the default chroot.
+    pub dir: PathBuf,
 }
 
 /// Look up `name` in the password database.
@@ -173,11 +224,14 @@ pub fn getpwnam(name: &str) -> Option<Passwd> {
     if pw.is_null() {
         return None;
     }
-    // SAFETY: non-null, points to a valid passwd.
+    // SAFETY: non-null, points to a valid passwd whose pw_dir is a
+    // NUL-terminated string.
     unsafe {
+        let dir = std::ffi::CStr::from_ptr((*pw).pw_dir);
         Some(Passwd {
             uid: (*pw).pw_uid,
             gid: (*pw).pw_gid,
+            dir: PathBuf::from(std::ffi::OsStr::from_bytes(dir.to_bytes())),
         })
     }
 }
@@ -187,34 +241,98 @@ pub fn is_root() -> bool {
     unsafe { libc::geteuid() == 0 }
 }
 
-/// Drop to `pw`: supplementary groups, gid, uid.
-pub fn drop_privs(pw: Passwd) -> io::Result<()> {
-    // SAFETY: plain libc calls with valid arguments.
+/// Confine the process to `dir` and drop to `pw`: chroot, chdir to `/`,
+/// supplementary groups, gid, uid.
+/// `dir` must be owned by root and not writable by group or others.
+pub fn drop_privs(pw: &Passwd, dir: &Path) -> io::Result<()> {
+    let c = cpath(dir)?;
+    // SAFETY: plain libc calls with valid arguments; st is only read
+    // after stat succeeds.
     unsafe {
+        let mut st: libc::stat = std::mem::zeroed();
+        if libc::stat(c.as_ptr(), &raw mut st) == -1 {
+            return Err(io::Error::last_os_error());
+        }
+        if st.st_uid != 0 || st.st_mode & (libc::S_IWGRP | libc::S_IWOTH) != 0 {
+            return Err(io::Error::other(format!(
+                "bad privsep dir permissions: {}",
+                dir.display()
+            )));
+        }
+        if libc::chroot(c.as_ptr()) == -1 || libc::chdir(c"/".as_ptr()) == -1 {
+            return Err(io::Error::last_os_error());
+        }
         if libc::setgroups(1, &raw const pw.gid) == -1
-            || libc::setgid(pw.gid) == -1
-            || libc::setuid(pw.uid) == -1
+            || setresgid(pw.gid) == -1
+            || setresuid(pw.uid) == -1
         {
             return Err(io::Error::last_os_error());
+        }
+        if libc::setuid(0) != -1 {
+            return Err(io::Error::other("able to regain privileges"));
         }
     }
     Ok(())
 }
 
-/// `chown(2)` on a path.
-pub fn chown(
-    path: &std::path::Path,
-    uid: libc::uid_t,
-    gid: libc::gid_t,
-) -> io::Result<()> {
-    use std::os::unix::ffi::OsStrExt;
-    let c = CString::new(path.as_os_str().as_bytes())
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-    // SAFETY: c is a valid NUL-terminated path.
-    if unsafe { libc::chown(c.as_ptr(), uid, gid) } == -1 {
-        return Err(io::Error::last_os_error());
+#[cfg(not(target_os = "macos"))]
+unsafe fn setresgid(gid: libc::gid_t) -> libc::c_int {
+    // SAFETY: plain libc call.
+    unsafe { libc::setresgid(gid, gid, gid) }
+}
+
+#[cfg(not(target_os = "macos"))]
+unsafe fn setresuid(uid: libc::uid_t) -> libc::c_int {
+    // SAFETY: plain libc call.
+    unsafe { libc::setresuid(uid, uid, uid) }
+}
+
+/// macOS lacks setres*; setgid/setuid set all three ids when root.
+#[cfg(target_os = "macos")]
+unsafe fn setresgid(gid: libc::gid_t) -> libc::c_int {
+    // SAFETY: plain libc call.
+    unsafe { libc::setgid(gid) }
+}
+
+#[cfg(target_os = "macos")]
+unsafe fn setresuid(uid: libc::uid_t) -> libc::c_int {
+    // SAFETY: plain libc call.
+    unsafe { libc::setuid(uid) }
+}
+
+/// Effective uid of the peer on a connected Unix socket.
+pub fn peer_euid(fd: RawFd) -> io::Result<libc::uid_t> {
+    #[cfg(target_os = "linux")]
+    // SAFETY: getsockopt fills a ucred of the length passed.
+    unsafe {
+        let mut cred: libc::ucred = std::mem::zeroed();
+        let mut len = std::mem::size_of::<libc::ucred>() as libc::socklen_t;
+        if libc::getsockopt(
+            fd,
+            libc::SOL_SOCKET,
+            libc::SO_PEERCRED,
+            (&raw mut cred).cast(),
+            &raw mut len,
+        ) == -1
+        {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(cred.uid)
     }
-    Ok(())
+    #[cfg(not(target_os = "linux"))]
+    // SAFETY: getpeereid writes both ids on success.
+    unsafe {
+        let (mut uid, mut gid) = (0 as libc::uid_t, 0 as libc::gid_t);
+        if libc::getpeereid(fd, &raw mut uid, &raw mut gid) == -1 {
+            return Err(io::Error::last_os_error());
+        }
+        Ok(uid)
+    }
+}
+
+fn cpath(path: &Path) -> io::Result<CString> {
+    CString::new(path.as_os_str().as_bytes())
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
 }
 
 pub fn pollfd(fd: RawFd, events: libc::c_short) -> libc::pollfd {

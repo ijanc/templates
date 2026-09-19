@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: ISC
 // SPDX-FileCopyrightText: {{year}} {{authors}}
 
-use std::{env, os::unix::net::UnixStream, path::PathBuf, process};
+use std::{env, io::Write, os::unix::net::UnixStream, path::PathBuf, process};
 
 use {{crate_name}}::{
     CTL, SOCKET,
     error::strerror,
-    ipc::{Request, Response, Status, read_frame, write_frame},
+    imsg,
+    ipc::{Request, Response, Status},
 };
 
 fn usage() -> ! {
@@ -158,12 +159,18 @@ fn main() {
         eprintln!("{CTL}: connect: {}: {}", socket.display(), strerror(&e));
         process::exit(1);
     });
-    if let Err(e) = write_frame(&mut stream, &req) {
+    let r = req
+        .encode()
+        .and_then(|buf| stream.write_all(&buf).and_then(|()| stream.flush()));
+    if let Err(e) = r {
         eprintln!("{CTL}: write: {}", strerror(&e));
         process::exit(1);
     }
-    let resp: Response = match read_frame(&mut stream) {
-        Ok(r) => r,
+    let resp = match imsg::read_blocking(&mut stream) {
+        Ok(m) => Response::from_imsg(&m).unwrap_or_else(|e| {
+            eprintln!("{CTL}: {e}");
+            process::exit(1);
+        }),
         Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
             eprintln!("{CTL}: pipe closed");
             process::exit(1);
@@ -191,6 +198,13 @@ fn print_status(s: &Status) {
     println!("reloads:   {}", s.reloads);
     println!("socket:    {}", s.config.socket.display());
     println!("user:      {}", s.config.user.as_deref().unwrap_or("-"));
+    println!(
+        "chroot:    {}",
+        s.config
+            .chroot
+            .as_deref()
+            .map_or("-".into(), |p| p.display().to_string())
+    );
     println!("interval:  {}s", s.config.interval);
 }
 

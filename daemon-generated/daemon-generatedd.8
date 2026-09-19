@@ -1,6 +1,6 @@
 .\" SPDX-License-Identifier: ISC
 .\" SPDX-FileCopyrightText: 2026 your name <author@example.com>
-.Dd $Mdocdate: September 16 2026 $
+.Dd $Mdocdate: September 19 2026 $
 .Dt DAEMON-GENERATEDD 8
 .Os
 .Sh NAME
@@ -19,6 +19,22 @@ It detaches from the terminal, logs to
 listens on a control socket for
 .Xr daemon-generatedctl 8
 and runs a periodic task.
+.Pp
+.Nm
+is split into two processes.
+The parent keeps its privileges, reads the configuration file and
+supervises the engine.
+The engine runs the periodic task and serves the control socket; it
+receives its configuration and the socket from the parent and never
+touches the file system.
+When
+.Cm user
+is set in the configuration file the engine runs as that user, confined
+with
+.Xr chroot 2
+to the
+.Cm chroot
+directory or the user's home directory.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
@@ -47,12 +63,20 @@ When
 .Cm user
 is set in the configuration file,
 .Nm
-must be started as root: the control socket is created, handed to that
-user, and privileges are dropped before the main loop starts.
+must be started as root.
+The control socket is created by the parent, mode 0660 and owned by
+root, before the engine drops privileges.
+Requests other than
+.Cm show status
+are accepted only from root and from the user the engine runs as.
 .Pp
 .Nm
 refuses to start when another instance answers on the control socket.
 A stale socket left by a crashed instance is removed.
+.Pp
+If the engine exits unexpectedly the parent logs the event and exits
+with status 1.
+If the parent goes away the engine exits.
 .Pp
 The following signals are handled:
 .Bl -tag -width SIGTERM
@@ -60,9 +84,10 @@ The following signals are handled:
 Reload the configuration file.
 On error the running configuration is kept.
 Changes to
-.Cm socket
-and
+.Cm socket ,
 .Cm user
+and
+.Cm chroot
 take effect only after a restart.
 .It Dv SIGTERM , Dv SIGINT
 Terminate.

@@ -1,21 +1,18 @@
 // SPDX-License-Identifier: ISC
 // SPDX-FileCopyrightText: {{year}} {{authors}}
 
-//! Wire format between daemon and control program.
-//!
-//! A frame is a little-endian `u32` body length followed by the body,
-//! a postcard-encoded [`Request`] or [`Response`].
+//! Control protocol between the control program and the engine, carried
+//! as [`imsg`] messages: the message type selects the variant, the
+//! payload is the variant's data.
 
-use std::io::{self, Read, Write};
+use std::io;
 
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{Deserialize, Serialize};
 
-use crate::config::Config;
-
-/// Largest accepted frame body in bytes.
-pub const MAX_FRAME: usize = 16384;
-
-const HEADER: usize = 4;
+use crate::{
+    config::Config,
+    imsg::{self, Imsg},
+};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum Request {
@@ -41,63 +38,67 @@ pub struct Status {
     pub reloads: u32,
 }
 
-/// Encode `msg` as a complete frame.
-pub fn encode<T: Serialize>(msg: &T) -> io::Result<Vec<u8>> {
-    let body = postcard::to_stdvec(msg).map_err(invalid)?;
-    if body.len() > MAX_FRAME {
-        return Err(invalid("frame too large"));
+impl Request {
+    /// Whether only root (or the daemon's own user) may issue it.
+    pub fn privileged(&self) -> bool {
+        !matches!(self, Self::ShowStatus)
     }
-    let mut out = Vec::with_capacity(HEADER + body.len());
-    out.extend_from_slice(&(body.len() as u32).to_le_bytes());
-    out.extend_from_slice(&body);
-    Ok(out)
+
+    /// Message type and payload.
+    pub fn parts(&self) -> io::Result<(u32, Vec<u8>)> {
+        Ok(match self {
+            Self::ShowStatus => (imsg::IMSG_CTL_SHOW_STATUS, Vec::new()),
+            Self::LogVerbose(on) => {
+                (imsg::IMSG_CTL_VERBOSE, imsg::payload(on)?)
+            }
+            Self::Reload => (imsg::IMSG_CTL_RELOAD, Vec::new()),
+            Self::Shutdown => (imsg::IMSG_CTL_SHUTDOWN, Vec::new()),
+        })
+    }
+
+    pub fn encode(&self) -> io::Result<Vec<u8>> {
+        let (typ, body) = self.parts()?;
+        imsg::encode_raw(typ, 0, std::process::id(), &body)
+    }
+
+    pub fn from_imsg(m: &Imsg) -> io::Result<Self> {
+        Ok(match m.hdr.typ {
+            imsg::IMSG_CTL_SHOW_STATUS => Self::ShowStatus,
+            imsg::IMSG_CTL_VERBOSE => Self::LogVerbose(m.get()?),
+            imsg::IMSG_CTL_RELOAD => Self::Reload,
+            imsg::IMSG_CTL_SHUTDOWN => Self::Shutdown,
+            t => return Err(unknown(t)),
+        })
+    }
 }
 
-/// Decode one frame from the front of `buf`.
-/// Returns the message and the number of bytes consumed, or `None` when
-/// the frame is incomplete.
-pub fn decode<T: DeserializeOwned>(
-    buf: &[u8],
-) -> io::Result<Option<(T, usize)>> {
-    if buf.len() < HEADER {
-        return Ok(None);
+impl Response {
+    /// Message type and payload.
+    pub fn parts(&self) -> io::Result<(u32, Vec<u8>)> {
+        Ok(match self {
+            Self::Status(s) => (imsg::IMSG_CTL_STATUS, imsg::payload(s)?),
+            Self::Ok => (imsg::IMSG_CTL_OK, Vec::new()),
+            Self::Fail(e) => (imsg::IMSG_CTL_FAIL, imsg::payload(e)?),
+        })
     }
-    let len = u32::from_le_bytes([buf[0], buf[1], buf[2], buf[3]]) as usize;
-    if len > MAX_FRAME {
-        return Err(invalid("frame too large"));
+
+    pub fn encode(&self, peerid: u32) -> io::Result<Vec<u8>> {
+        let (typ, body) = self.parts()?;
+        imsg::encode_raw(typ, peerid, std::process::id(), &body)
     }
-    let end = HEADER + len;
-    if buf.len() < end {
-        return Ok(None);
+
+    pub fn from_imsg(m: &Imsg) -> io::Result<Self> {
+        Ok(match m.hdr.typ {
+            imsg::IMSG_CTL_STATUS => Self::Status(m.get()?),
+            imsg::IMSG_CTL_OK => Self::Ok,
+            imsg::IMSG_CTL_FAIL => Self::Fail(m.get()?),
+            t => return Err(unknown(t)),
+        })
     }
-    let msg = postcard::from_bytes(&buf[HEADER..end]).map_err(invalid)?;
-    Ok(Some((msg, end)))
 }
 
-/// Blocking read of one frame.
-pub fn read_frame<T: DeserializeOwned>(r: &mut impl Read) -> io::Result<T> {
-    let mut hdr = [0u8; HEADER];
-    r.read_exact(&mut hdr)?;
-    let len = u32::from_le_bytes(hdr) as usize;
-    if len > MAX_FRAME {
-        return Err(invalid("frame too large"));
-    }
-    let mut body = vec![0u8; len];
-    r.read_exact(&mut body)?;
-    postcard::from_bytes(&body).map_err(invalid)
-}
-
-/// Blocking write of one frame.
-pub fn write_frame<T: Serialize>(
-    w: &mut impl Write,
-    msg: &T,
-) -> io::Result<()> {
-    w.write_all(&encode(msg)?)?;
-    w.flush()
-}
-
-fn invalid<E: ToString>(e: E) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, e.to_string())
+fn unknown(t: u32) -> io::Error {
+    io::Error::new(io::ErrorKind::InvalidData, format!("unknown imsg type {t}"))
 }
 
 #[cfg(test)]
@@ -112,70 +113,46 @@ mod tests {
             Request::Reload,
             Request::Shutdown,
         ] {
-            let buf = encode(&req).unwrap();
-            let (got, n): (Request, usize) = decode(&buf).unwrap().unwrap();
-            assert_eq!(got, req);
+            let buf = req.encode().unwrap();
+            let (m, n) = imsg::decode(&buf).unwrap().unwrap();
             assert_eq!(n, buf.len());
+            assert_eq!(Request::from_imsg(&m).unwrap(), req);
         }
     }
 
     #[test]
-    fn roundtrip_response_over_stream() {
-        let resp = Response::Status(Status {
-            pid: 42,
-            uptime_secs: 7,
-            config: Config::default(),
-            verbose: true,
-            reloads: 3,
-        });
-        let mut buf = Vec::new();
-        write_frame(&mut buf, &resp).unwrap();
-        let got: Response = read_frame(&mut &buf[..]).unwrap();
-        assert_eq!(got, resp);
-    }
-
-    #[test]
-    fn decode_incomplete_is_none() {
-        let buf = encode(&Request::Reload).unwrap();
-        for n in 0..buf.len() {
-            let r: Option<(Request, usize)> = decode(&buf[..n]).unwrap();
-            assert!(r.is_none(), "prefix of {n} bytes decoded");
+    fn roundtrip_response() {
+        for resp in [
+            Response::Status(Status {
+                pid: 42,
+                uptime_secs: 7,
+                config: Config::default(),
+                verbose: true,
+                reloads: 3,
+            }),
+            Response::Ok,
+            Response::Fail("x".into()),
+        ] {
+            let buf = resp.encode(9).unwrap();
+            let (m, _) = imsg::decode(&buf).unwrap().unwrap();
+            assert_eq!(m.hdr.peerid, 9);
+            assert_eq!(Response::from_imsg(&m).unwrap(), resp);
         }
     }
 
     #[test]
-    fn decode_keeps_trailing_bytes() {
-        let mut buf = encode(&Request::Reload).unwrap();
-        let n = buf.len();
-        buf.extend_from_slice(&[9, 9, 9]);
-        let (_, used): (Request, usize) = decode(&buf).unwrap().unwrap();
-        assert_eq!(used, n);
+    fn unknown_type_is_error() {
+        let buf = imsg::encode(999, 0, 0, &()).unwrap();
+        let (m, _) = imsg::decode(&buf).unwrap().unwrap();
+        assert!(Request::from_imsg(&m).is_err());
+        assert!(Response::from_imsg(&m).is_err());
     }
 
     #[test]
-    fn oversize_frame_rejected() {
-        let mut buf = ((MAX_FRAME + 1) as u32).to_le_bytes().to_vec();
-        buf.push(0);
-        let e = decode::<Request>(&buf).unwrap_err();
-        assert_eq!(e.kind(), io::ErrorKind::InvalidData);
-        let e = read_frame::<Request>(&mut &buf[..]).unwrap_err();
-        assert_eq!(e.kind(), io::ErrorKind::InvalidData);
-    }
-
-    #[test]
-    fn truncated_stream_is_unexpected_eof() {
-        let buf = encode(&Request::Shutdown).unwrap();
-        let e = read_frame::<Request>(&mut &buf[..2]).unwrap_err();
-        assert_eq!(e.kind(), io::ErrorKind::UnexpectedEof);
-        let e = read_frame::<Request>(&mut &buf[..buf.len() - 1]).unwrap_err();
-        assert_eq!(e.kind(), io::ErrorKind::UnexpectedEof);
-    }
-
-    #[test]
-    fn garbage_body_rejected() {
-        let mut buf = 2u32.to_le_bytes().to_vec();
-        buf.extend_from_slice(&[0xff, 0xff]);
-        let e = decode::<Request>(&buf).unwrap_err();
-        assert_eq!(e.kind(), io::ErrorKind::InvalidData);
+    fn only_status_is_unprivileged() {
+        assert!(!Request::ShowStatus.privileged());
+        assert!(Request::Reload.privileged());
+        assert!(Request::LogVerbose(false).privileged());
+        assert!(Request::Shutdown.privileged());
     }
 }

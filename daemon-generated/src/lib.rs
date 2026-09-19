@@ -4,9 +4,12 @@
 pub mod config;
 pub mod control;
 pub mod daemon;
+pub mod engine;
 pub mod error;
+pub mod imsg;
 pub mod ipc;
 pub mod log;
+pub mod proc;
 
 /// Daemon program name, used for log identity and diagnostics.
 pub const DAEMON: &str = "daemon-generatedd";

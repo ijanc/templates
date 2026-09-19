@@ -7,7 +7,7 @@ daemon="/usr/local/sbin/{{daemon_name}}"
 . /etc/rc.d/rc.subr
 
 rc_configtest() {
-	${daemon} -n ${daemon_flags}
+	rc_exec "${daemon} -n ${daemon_flags}"
 }
 
 rc_reload() {

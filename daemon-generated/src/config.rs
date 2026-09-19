@@ -16,9 +16,12 @@ use crate::error::{Result, strerror};
 pub struct Config {
     /// Control socket path.
     pub socket: PathBuf,
-    /// User to run as after the control socket is created.
+    /// User the engine runs as.
     /// Requires root when set.
     pub user: Option<String>,
+    /// Directory the engine is confined to with `chroot(2)`.
+    /// Defaults to the home directory of `user`.
+    pub chroot: Option<PathBuf>,
     /// Seconds between main loop ticks.
     pub interval: u64,
 }
@@ -28,6 +31,7 @@ impl Default for Config {
         Self {
             socket: crate::SOCKET.into(),
             user: None,
+            chroot: None,
             interval: 60,
         }
     }
@@ -62,6 +66,9 @@ impl Config {
         if let Some(u) = &self.user {
             anyhow::ensure!(!u.is_empty(), "user must not be empty");
         }
+        if let Some(c) = &self.chroot {
+            anyhow::ensure!(c.is_absolute(), "chroot must be an absolute path");
+        }
         Ok(())
     }
 }
@@ -81,17 +88,20 @@ mod tests {
         let cfg = Config::default();
         assert_eq!(cfg.socket, PathBuf::from(crate::SOCKET));
         assert_eq!(cfg.user, None);
+        assert_eq!(cfg.chroot, None);
         assert_eq!(cfg.interval, 60);
         assert!(cfg.validate().is_ok());
     }
 
     #[test]
     fn parses_all_keys() {
-        let cfg =
-            parse("socket = \"/tmp/x.sock\"\nuser = \"_x\"\ninterval = 5\n")
-                .unwrap();
+        let cfg = parse(
+            "socket = \"/tmp/x.sock\"\nuser = \"_x\"\nchroot = \"/var/empty\"\ninterval = 5\n",
+        )
+        .unwrap();
         assert_eq!(cfg.socket, PathBuf::from("/tmp/x.sock"));
         assert_eq!(cfg.user.as_deref(), Some("_x"));
+        assert_eq!(cfg.chroot, Some(PathBuf::from("/var/empty")));
         assert_eq!(cfg.interval, 5);
     }
 
@@ -105,6 +115,12 @@ mod tests {
     fn rejects_relative_socket() {
         let e = parse("socket = \"x.sock\"\n").unwrap_err();
         assert!(e.to_string().contains("socket"));
+    }
+
+    #[test]
+    fn rejects_relative_chroot() {
+        let e = parse("chroot = \"empty\"\n").unwrap_err();
+        assert!(e.to_string().contains("chroot"));
     }
 
     #[test]

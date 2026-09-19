@@ -82,6 +82,15 @@ impl Drop for Daemon {
     }
 }
 
+/// Engine pid from `show status` output.
+fn engine_pid(status: &str) -> u32 {
+    status
+        .lines()
+        .find_map(|l| l.strip_prefix("pid:"))
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or_else(|| panic!("no pid in {status}"))
+}
+
 fn stdout(o: &Output) -> String {
     String::from_utf8_lossy(&o.stdout).into_owned()
 }
@@ -97,10 +106,8 @@ fn lifecycle() {
     let o = d.ctl(&["show", "status"]);
     assert!(o.status.success(), "{}", stderr(&o));
     let out = stdout(&o);
-    assert!(
-        out.contains(&format!("pid:       {}", d.child.id())),
-        "{out}"
-    );
+    let engine = engine_pid(&out);
+    assert_ne!(engine, d.child.id(), "{out}");
     assert!(out.contains("verbose:   yes"), "{out}");
     assert!(out.contains("reloads:   0"), "{out}");
     assert!(out.contains("interval:  1s"), "{out}");
@@ -135,6 +142,35 @@ fn lifecycle() {
     let status = d.child.wait().unwrap();
     assert!(status.success(), "{status}");
     assert!(!d.sock.exists());
+}
+
+#[test]
+fn lost_engine_exits_nonzero() {
+    let mut d = Daemon::spawn();
+    let engine = engine_pid(&stdout(&d.ctl(&["show", "status"])));
+    // SAFETY: pid of a process this test started.
+    unsafe {
+        libc::kill(engine as libc::pid_t, libc::SIGKILL);
+    }
+    let status = d.child.wait().unwrap();
+    assert_eq!(status.code(), Some(1), "{status}");
+}
+
+#[test]
+fn parent_death_stops_engine() {
+    let mut d = Daemon::spawn();
+    let engine = engine_pid(&stdout(&d.ctl(&["show", "status"])));
+    d.child.kill().unwrap();
+    d.child.wait().unwrap();
+    let start = Instant::now();
+    // SAFETY: signal 0 only checks for existence.
+    while unsafe { libc::kill(engine as libc::pid_t, 0) } == 0 {
+        assert!(
+            start.elapsed() < Duration::from_secs(5),
+            "engine {engine} still running"
+        );
+        thread::sleep(Duration::from_millis(20));
+    }
 }
 
 #[test]
@@ -211,4 +247,11 @@ fn config_check() {
         stderr(&o),
         format!("usage: {DAEMON} [-dnv] [-f file] [-s socket]\n")
     );
+
+    // Hidden child options are rejected outside a child.
+    for args in [&["-P", "bogus"][..], &["-u", "nobody"], &["-P", "parent"]] {
+        let o = Command::new(DAEMON_EXE).args(args).output().unwrap();
+        assert_eq!(o.status.code(), Some(1), "{args:?}");
+        assert!(stderr(&o).starts_with("usage:"), "{}", stderr(&o));
+    }
 }

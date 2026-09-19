@@ -20,6 +20,7 @@ const SYSLOG_PATHS: &[&str] = &["/dev/log", "/var/run/syslog", "/var/run/log"];
 const FACILITY: u8 = 3 << 3;
 
 static IDENT: OnceLock<&'static str> = OnceLock::new();
+static PROCNAME: OnceLock<&'static str> = OnceLock::new();
 
 /// Log level for a `-v` count.
 pub fn level(verbose: u8) -> LevelFilter {
@@ -49,6 +50,27 @@ pub fn init(ident: &'static str, debug: bool, verbose: u8) {
         set_sink(Sink::Stderr);
     }
     log::set_max_level(level(verbose));
+}
+
+/// Name of this process, used in fatal messages.
+pub fn procinit(name: &'static str) {
+    let _ = PROCNAME.set(name);
+}
+
+pub fn procname() -> &'static str {
+    PROCNAME.get().copied().unwrap_or("main")
+}
+
+/// Log `msg` at critical severity, bypassing the level filter.
+pub fn crit(msg: &str) {
+    let mut sink = SINK.lock().unwrap_or_else(|e| e.into_inner());
+    match &mut *sink {
+        Sink::Stderr => {
+            let ident = IDENT.get().copied().unwrap_or("");
+            let _ = writeln!(std::io::stderr().lock(), "{ident}: {msg}");
+        }
+        Sink::Syslog(s) => s.send(2, format_args!("{msg}")),
+    }
 }
 
 /// Toggle debug logging at runtime.
@@ -159,12 +181,16 @@ impl Syslog {
             Level::Info => 6,
             Level::Debug | Level::Trace => 7,
         };
+        self.send(severity, *r.args());
+    }
+
+    fn send(&mut self, severity: u8, args: std::fmt::Arguments) {
         let msg = format!(
             "<{}>{}[{}]: {}",
             FACILITY | severity,
             self.ident,
             process::id(),
-            r.args()
+            args
         );
         if self.sock.send(msg.as_bytes()).is_err() {
             // syslogd may have restarted; reconnect once.

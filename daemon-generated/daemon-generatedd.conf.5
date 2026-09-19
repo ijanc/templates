@@ -1,6 +1,6 @@
 .\" SPDX-License-Identifier: ISC
 .\" SPDX-FileCopyrightText: 2026 your name <author@example.com>
-.Dd $Mdocdate: September 16 2026 $
+.Dd $Mdocdate: September 19 2026 $
 .Dt DAEMON-GENERATEDD.CONF 5
 .Os
 .Sh NAME
@@ -27,11 +27,19 @@ Must be absolute.
 Default:
 .Pa /var/run/daemon-generatedd.sock .
 .It Cm user No = Ar string
-Run as this user after the control socket is created.
+Run the engine process as this user.
 .Xr daemon-generatedd 8
 must then be started as root.
-The socket is owned by this user, mode 0660.
 Default: unset, run as the invoking user.
+.It Cm chroot No = Ar path
+Directory the engine is confined to with
+.Xr chroot 2
+when
+.Cm user
+is set.
+Must be absolute, owned by root and not writable by group or others.
+Default: the home directory of
+.Cm user .
 .It Cm interval No = Ar integer
 Seconds between runs of the periodic task.
 Must be at least 1.
@@ -46,6 +54,7 @@ Default location.
 .Bd -literal -offset indent
 socket = "/var/run/daemon-generatedd.sock"
 user = "_daemon_generated"
+chroot = "/var/empty"
 interval = 30
 .Ed
 .Sh SEE ALSO

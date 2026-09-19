@@ -5,15 +5,23 @@ use std::{ffi::CStr, fmt::Display, io, process};
 
 pub type Result<T> = anyhow::Result<T>;
 
-/// Log at error level and exit with status 1.
+/// Log at critical level, naming the process, and exit with status 1.
+/// For errors once the daemon is up; startup checks use [`errx`].
 pub fn fatal(msg: impl Display) -> ! {
+    crate::log::crit(&format!("fatal in {}: {msg:#}", crate::log::procname()));
+    process::exit(1)
+}
+
+/// Log at error level and exit with status 1, like `errx(3)`.
+pub fn errx(msg: impl Display) -> ! {
     log::error!("{msg:#}");
     process::exit(1)
 }
 
-/// Unwrap or [`fatal`].
+/// Unwrap or exit.
 pub trait OrFatal<T> {
     fn or_fatal(self) -> T;
+    fn or_errx(self) -> T;
 }
 
 impl<T, E: Display> OrFatal<T> for std::result::Result<T, E> {
@@ -21,6 +29,13 @@ impl<T, E: Display> OrFatal<T> for std::result::Result<T, E> {
         match self {
             Ok(v) => v,
             Err(e) => fatal(e),
+        }
+    }
+
+    fn or_errx(self) -> T {
+        match self {
+            Ok(v) => v,
+            Err(e) => errx(e),
         }
     }
 }

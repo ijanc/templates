@@ -8,3 +8,4 @@ extend-ignore-re = [
 
 [default.extend-words]
 fpr = "fpr"
+controllen = "controllen"
