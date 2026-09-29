@@ -3,7 +3,7 @@
 
 //! {% if store == "postgres" %}PostgreSQL{% else %}SQLite{% endif %} store through `sqlx`, schema in `migrations/`.
 
-use chrono::Utc;
+use chrono::{DateTime, SubsecRound, Utc};
 {%- if store == "postgres" %}
 use sqlx::{PgPool as Pool, postgres::PgPoolOptions as PoolOptions};
 {%- else %}
@@ -18,6 +18,12 @@ use crate::{
 {%- else %}
 use crate::model::{CreateItem, Item, Page, UpdateItem};
 {%- endif %}
+
+/// The current time at the precision the database keeps, so an item
+/// returned by a write equals the same item read back.
+fn now() -> DateTime<Utc> {
+    Utc::now().trunc_subsecs(6)
+}
 
 #[derive(Clone, Debug)]
 pub struct Store {
@@ -74,7 +80,7 @@ impl Store {
     }
 
     pub async fn create(&self, input: CreateItem) -> anyhow::Result<Item> {
-        let now = Utc::now();
+        let now = now();
         let item = Item {
             id: Uuid::new_v4(),
             name: input.name,
@@ -158,7 +164,7 @@ impl Store {
         .bind(id)
         .bind(&input.name)
         .bind(&input.description)
-        .bind(Utc::now())
+        .bind(now())
         .fetch_optional(&self.pool)
         .await?;
 {%- if cache %}

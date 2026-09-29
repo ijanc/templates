@@ -94,6 +94,9 @@ Derived in `hooks/pre.rhai`:
   nanoseconds but the databases keep less, so a finer tag would differ
   between the `POST` response and the next `GET`. `If-Match` is checked
   with a read before the write; the window between them is accepted.
+- The sqlx store truncates timestamps to microseconds before writing, the
+  precision both databases keep, so an item returned by `POST`/`PUT`
+  equals the same item read back.
 - The cache is an `Option<Cache>` inside the sqlx `Store`: `get` fills
   it, `create`/`update` write through, `delete` drops the entry. `list`
   bypasses it. Another replica would serve stale items until the TTL
