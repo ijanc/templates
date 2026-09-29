@@ -1,0 +1,7 @@
+/target
+/.env
+{%- if store == "sqlite" %}
+/*.db
+/*.db-*
+/data
+{%- endif %}

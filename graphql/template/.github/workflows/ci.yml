@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+concurrency:
+  group: {% raw %}${{ github.workflow }}{% endraw %}-{% raw %}${{ github.ref }}{% endraw %}
+  cancel-in-progress: true
+
+jobs:
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2026-09-13
+          components: rustfmt
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/dprint
+          key: dprint-{% raw %}${{ runner.os }}{% endraw %}-{% raw %}${{ hashFiles('dprint.json') }}{% endraw %}
+      - uses: dprint/check@v2.5
+
+  typos:
+    name: Typos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: crate-ci/typos@v1.50.1
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2026-09-13
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ci
+          save-if: {% raw %}${{ github.ref == 'refs/heads/main' }}{% endraw %}
+      - run: cargo clippy --all-targets --all-features
+
+  test:
+    name: Test
+{%- if store == "postgres" %}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+{%- else %}
+    runs-on: {% raw %}${{ matrix.os }}{% endraw %}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+{%- endif %}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2026-09-13
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ci
+          save-if: {% raw %}${{ github.ref == 'refs/heads/main' }}{% endraw %}
+      - run: cargo test --all-features
+
+  deny:
+    name: Cargo deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses
+
+  pre-commit:
+    name: Pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-{% raw %}${{ runner.os }}{% endraw %}-{% raw %}${{ hashFiles('.pre-commit-config.yaml') }}{% endraw %}
+      - uses: pre-commit/action@v3.0.1

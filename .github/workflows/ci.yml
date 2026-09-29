@@ -39,6 +39,16 @@ jobs:
             name: api-postgres-generated
             arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=postgres --define cache=false
             database_url: postgres://postgres:postgres@localhost:5432/postgres
+          - template: graphql
+            name: graphql-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=memory
+          - template: graphql
+            name: graphql-sqlite-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=sqlite --define cache=true
+          - template: graphql
+            name: graphql-postgres-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=postgres --define cache=false
+            database_url: postgres://postgres:postgres@localhost:5432/postgres
           - template: web
             name: web-generated
             arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=sqlite --define auth=local
@@ -72,7 +82,7 @@ jobs:
           --health-retries 10
     env:
       PROJECT_NAME: ${{ matrix.name }}
-      # Empty for every variant but api-postgres; its tests skip without it.
+      # Empty for every variant without postgres; their tests skip without it.
       DATABASE_URL: ${{ matrix.database_url }}
     steps:
       - uses: actions/checkout@v7

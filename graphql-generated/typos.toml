@@ -1,0 +1,10 @@
+[files]
+extend-exclude = ["target/"]
+
+[default]
+extend-ignore-re = [
+  "(?s)-----BEGIN PGP PUBLIC KEY BLOCK-----.*?-----END PGP PUBLIC KEY BLOCK-----",
+]
+
+[default.extend-words]
+fpr = "fpr"

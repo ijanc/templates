@@ -10,6 +10,9 @@ generate-all:
     just generate-api
     just generate-api-sqlite
     just generate-api-postgres
+    just generate-graphql
+    just generate-graphql-sqlite
+    just generate-graphql-postgres
     just generate-web
     just generate-lib
     just generate-lib-serde
@@ -75,6 +78,38 @@ generate-api-postgres $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
     cargo generate --path ./api \
         --name api-postgres-generated --vcs none \
         --define project-description="An example generated using the api template" \
+        --define gh-username=ijanc \
+        --define domain=example.org \
+        --define store=postgres \
+        --define cache=false
+
+# Regenerate graphql-generated from ./graphql (in-memory store)
+generate-graphql $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
+    rm -rf graphql-generated
+    cargo generate --path ./graphql \
+        --name graphql-generated --vcs none \
+        --define project-description="An example generated using the graphql template" \
+        --define gh-username=ijanc \
+        --define domain=example.org \
+        --define store=memory
+
+# Regenerate graphql-sqlite-generated from ./graphql (sqlx, SQLite, moka cache)
+generate-graphql-sqlite $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
+    rm -rf graphql-sqlite-generated
+    cargo generate --path ./graphql \
+        --name graphql-sqlite-generated --vcs none \
+        --define project-description="An example generated using the graphql template" \
+        --define gh-username=ijanc \
+        --define domain=example.org \
+        --define store=sqlite \
+        --define cache=true
+
+# Regenerate graphql-postgres-generated from ./graphql (sqlx, PostgreSQL)
+generate-graphql-postgres $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
+    rm -rf graphql-postgres-generated
+    cargo generate --path ./graphql \
+        --name graphql-postgres-generated --vcs none \
+        --define project-description="An example generated using the graphql template" \
         --define gh-username=ijanc \
         --define domain=example.org \
         --define store=postgres \

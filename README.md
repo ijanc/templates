@@ -22,6 +22,7 @@ cargo generate ijanc/templates daemon --name bar
 | [daemon](./daemon/)       | Unix daemon with control socket, man pages and CI                   |
 | [cli](./cli/)             | Command line tool with getopt/clap, env_logger, optional TOML/.env  |
 | [api](./api/)             | axum REST API with OpenAPI, metrics, memory/SQLite/PostgreSQL store |
+| [graphql](./graphql/)     | axum GraphQL API with GraphiQL, metrics, memory/SQLite/PostgreSQL   |
 | [web](./web/)             | axum web app with MiniJinja, sessions, CSRF, Bootstrap, invites     |
 | [lib](./lib/)             | Library crate with thiserror, optional serde, docs/MSRV CI, release |
 | [hexagonal](./hexagonal/) | Hexagonal workspace: domain, use cases, axum and sqlx adapters, CLI |

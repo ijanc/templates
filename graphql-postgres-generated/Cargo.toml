@@ -1,0 +1,62 @@
+[package]
+name = "graphql-postgres-generated"
+version = "0.1.0"
+authors = ["your name <author@example.com>"]
+edition = "2024"
+license = "ISC"
+repository = "https://github.com/ijanc/graphql-postgres-generated"
+description = "An example generated using the graphql template"
+
+[dependencies]
+anyhow = "1.0.104"
+async-graphql = { version = "7.2.1", default-features = false, features = [
+  "chrono",
+  "custom-error-conversion",
+  "graphiql",
+  "uuid",
+] }
+async-graphql-axum = "7.2.1"
+axum = "0.8.9"
+axum-prometheus = "0.10.1"
+chrono = { version = "0.4.45", features = ["serde"] }
+dotenvy = "0.15.7"
+governor = { version = "0.10.4", default-features = false }
+listenfd = "1.0.2"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sqlx = { version = "0.9.0", default-features = false, features = [
+  "chrono",
+  "macros",
+  "migrate",
+  "postgres",
+  "runtime-tokio",
+  "tls-rustls",
+  "uuid",
+] }
+thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["full"] }
+tower-http = { version = "0.7.1", features = [
+  "cors",
+  "request-id",
+  "timeout",
+  "trace",
+] }
+tower_governor = { version = "0.8.0", default-features = false, features = [
+  "axum",
+] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+uuid = { version = "1.26.1", features = ["serde", "v4"] }
+validator = { version = "0.21.0", features = ["derive"] }
+
+[dev-dependencies]
+reqwest = { version = "0.13.5", default-features = false, features = ["json"] }
+
+[lib]
+name = "graphql_postgres_generated"
+path = "src/lib.rs"
+
+[[bin]]
+doc = false
+name = "graphql-postgres-generated"
+path = "src/main.rs"
