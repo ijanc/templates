@@ -1,0 +1,178 @@
+# {{project-name}}
+
+{{project-description}}
+
+A hexagonal workspace: the domain and the use cases are crates that know nothing
+about HTTP or databases, adapters on either side of them do the talking. The
+REST API is `/v1/items` CRUD on axum with OpenAPI, request ids, rate limiting,
+RFC 9457 errors, `tracing` logs and Prometheus metrics.
+
+{% if store == "memory" -%}
+Items live in memory and are lost on exit.
+{%- elsif store == "sqlite" -%}
+Items are stored in SQLite through sqlx; schema in
+`adapters/store-sqlx/migrations/`.
+{%- else -%}
+Items are stored in PostgreSQL through sqlx; schema in
+`adapters/store-sqlx/migrations/`.
+{%- endif %}
+
+## Layout
+
+```
+crates/domain          Item, Name and its rules; ItemRepository, the driven port
+crates/application     ItemUseCases, the driving port, and ItemService behind it
+crates/testkit         the repository contract every store has to pass
+adapters/http          axum: routes, wire types, errors, OpenAPI, middleware
+adapters/store-memory  ItemRepository in a map, also the test double
+{%- if sqlx %}
+adapters/store-sqlx    ItemRepository on {% if store == "postgres" %}PostgreSQL{% else %}SQLite{% endif %}, migrations
+{%- endif %}
+apps/server            {{project-name}}: configuration and wiring
+{%- if cli %}
+apps/cli               {{project-name}}-cli: the same use cases from a terminal
+{%- endif %}
+```
+
+Dependencies point inwards only: `apps` see everything, `adapters` see `domain`
+and `application`, `application` sees `domain`, `domain` sees no other crate.
+`just arch` checks the two inner crates against an allowlist; the `Layers` CI
+job runs the same script.
+
+{% if cli -%}
+A new use case is a method on `ItemUseCases` and `ItemService` in
+`crates/application`, a route and its wire types in `adapters/http` and a
+subcommand in `apps/cli`. A new port is a trait in `crates/domain/src/ports.rs`,
+one implementation per store and a line in `apps/server/src/main.rs`.
+{%- else -%}
+A new use case is a method on `ItemUseCases` and `ItemService` in
+`crates/application` and a route and its wire types in `adapters/http`. A new
+port is a trait in `crates/domain/src/ports.rs`, one implementation per store
+and a line in `apps/server/src/main.rs`.
+{%- endif %}
+
+## Running
+
+```sh
+cp .env.example .env
+{%- if store == "postgres" %}
+just up          # docker compose: database and prometheus
+just migrate-run # needs sqlx-cli
+{%- endif %}
+just run
+```
+
+`just dev` serves under bacon and restarts on every change; systemfd holds
+the socket open in between, so requests made during a rebuild wait instead of
+being refused. Needs `cargo install bacon systemfd`.
+
+| path                     | description                   |
+| ------------------------ | ----------------------------- |
+| `/healthz`               | liveness                      |
+| `/readyz`                | readiness, checks the store   |
+| `/metrics`               | Prometheus text format        |
+| `/swagger-ui`            | interactive API docs          |
+| `/api-docs/openapi.json` | OpenAPI document              |
+| `/v1/items`              | `POST`, `GET ?limit=&offset=` |
+| `/v1/items/{id}`         | `GET`, `PUT`, `DELETE`        |
+
+Errors are RFC 9457 Problem Details, `application/problem+json`:
+
+```json
+{
+  "type": "urn:{{crate_name}}:error:validation",
+  "title": "Unprocessable Entity",
+  "status": 422,
+  "detail": "request validation failed",
+  "instance": "/v1/items",
+  "code": "validation",
+  "request_id": "6b2b...",
+  "errors": [{ "field": "name", "code": "blank", "message": "must not be blank" }]
+}
+```
+
+`code` is stable per error kind; `errors` is present on 422 only and comes from
+the rules in `crates/domain` and `crates/application`.
+
+`/v1` is rate limited per client address: `X-RateLimit-Limit` and
+`X-RateLimit-Remaining` on every response, `429` with `Retry-After` once the
+burst is spent. Probes, metrics and docs are not limited.
+
+Every item response carries an `ETag` and `Cache-Control: private, no-cache`.
+`GET` with `If-None-Match` answers `304` when the tag still matches; `PUT` and
+`DELETE` with `If-Match` answer `412` when it no longer does, so concurrent
+edits cannot overwrite each other.
+{%- if cli %}
+
+## Command line
+
+```sh
+just cli migrate
+just cli items create widget -d "the first one"
+just cli items list
+just cli items get <id>
+just cli items update <id> gadget
+just cli items delete <id>
+```
+
+`DATABASE_URL` comes from the environment or `.env`; `--database-url` overrides
+it. Failures print one line on stderr and exit with status 1.
+{%- endif %}
+
+## Tests
+
+```sh
+just test
+```
+
+{% if store == "memory" -%}
+`crates/application` and `adapters/http` run over the in-memory store, so no
+database is needed. `adapters/store-memory` runs the contract from
+`crates/testkit`.
+{%- elsif store == "sqlite" -%}
+`crates/application` and `adapters/http` run over the in-memory store, so no
+database is needed. `adapters/store-memory` and `adapters/store-sqlx` run the
+same contract from `crates/testkit`, the latter on `sqlite::memory:`.
+{%- else -%}
+`crates/application` and `adapters/http` run over the in-memory store, so no
+database is needed. `adapters/store-memory` and `adapters/store-sqlx` run the
+same contract from `crates/testkit`, the latter on `DATABASE_URL` and skipped
+when it is unset.
+{%- endif %}
+
+## Configuration
+
+Read from the environment; `.env` is loaded first.
+
+- `{{env_prefix}}_ADDR`: listen address, default `127.0.0.1:8080`
+- `{{env_prefix}}_LOG`: `tracing` filter, default `info`
+- `{{env_prefix}}_LOG_FORMAT`: `pretty` (default) or `json`
+- `{{env_prefix}}_RATE_LIMIT_RPS`: sustained requests per second per
+  client, default `10`; `0` disables rate limiting
+- `{{env_prefix}}_RATE_LIMIT_BURST`: requests allowed at once, default `50`
+- `{{env_prefix}}_TRUST_PROXY`: take the client address from
+  `X-Forwarded-For`, `X-Real-Ip` or `Forwarded`, default `false`; only enable
+  behind a proxy that overwrites those headers
+{%- if store == "sqlite" %}
+- `DATABASE_URL`: default `sqlite://{{project-name}}.db?mode=rwc`
+- `{{env_prefix}}_RUN_MIGRATIONS`: apply migrations at startup, default
+  `true`
+{%- endif %}
+{%- if store == "postgres" %}
+- `DATABASE_URL`: required
+- `{{env_prefix}}_RUN_MIGRATIONS`: apply migrations at startup, default
+  `true`
+{%- endif %}
+
+## Docker
+
+```sh
+just docker-build                        # linux/amd64, loaded locally
+just docker-build PLATFORM=linux/arm64
+just docker-buildx ghcr.io/{{gh-username}}/{{project-name}}:latest  # multi-arch, pushed
+just up                                  # docker compose with prometheus on :9090
+```
+
+## License
+
+[ISC](LICENSE)

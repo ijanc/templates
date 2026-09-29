@@ -22,7 +22,7 @@ async fn run() -> anyhow::Result<()> {
     tracing::info!(version = %api_generated::version(), "starting");
     let store = Store::new();
 
-    let listener = tokio::net::TcpListener::bind(cfg.addr).await?;
+    let listener = listen(cfg.addr).await?;
     tracing::info!(addr = %listener.local_addr()?, "listening");
     let app = app(AppState { store }, cfg.rate_limit)
         .into_make_service_with_connect_info::<SocketAddr>();
@@ -31,6 +31,19 @@ async fn run() -> anyhow::Result<()> {
         .await?;
     tracing::info!("stopped");
     Ok(())
+}
+
+/// Takes the socket passed in by systemfd or systemd socket activation,
+/// so a restart keeps the port and queued connections; binds `addr`
+/// when there is none.
+async fn listen(
+    addr: std::net::SocketAddr,
+) -> anyhow::Result<tokio::net::TcpListener> {
+    if let Some(l) = listenfd::ListenFd::from_env().take_tcp_listener(0)? {
+        l.set_nonblocking(true)?;
+        return Ok(tokio::net::TcpListener::from_std(l)?);
+    }
+    Ok(tokio::net::TcpListener::bind(addr).await?)
 }
 
 /// Resolves on SIGINT or SIGTERM.

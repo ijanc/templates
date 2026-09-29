@@ -1,0 +1,16 @@
+[template]
+cargo_generate_version = ">=0.21.1"
+ignore = ["Cargo.lock", "target"]
+
+[hooks]
+pre = ["hooks/pre.rhai"]
+
+[placeholders]
+project-description = { type = "string", prompt = "Short description", default = "Hexagonal service" }
+gh-username = { type = "string", prompt = "GitHub username (repository URL, FUNDING.yml)" }
+domain = { type = "string", prompt = "Domain for security/conduct contact emails", default = "example.org" }
+store = { type = "string", prompt = "Storage backend", choices = ["memory", "sqlite", "postgres"], default = "sqlite" }
+
+# The command line client needs a store that outlives the process.
+[conditional.'store != "memory"'.placeholders]
+cli = { type = "bool", prompt = "Command line client (apps/cli)", default = false }

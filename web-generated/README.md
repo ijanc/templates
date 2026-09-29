@@ -20,6 +20,10 @@ npm run build   # static/css/app.css
 just run
 ```
 
+`just dev` serves under bacon and restarts on every change; systemfd holds
+the socket open in between, so requests made during a rebuild wait instead of
+being refused. Needs `cargo install bacon systemfd`.
+
 Templates are watched while `WEB_GENERATED_TEMPLATE_RELOAD` is on, so
 editing `templates/` shows up on the next request without a restart.
 Pages render without the stylesheet, so `cargo test` needs no npm.

@@ -48,6 +48,16 @@ jobs:
           - template: web
             name: web-memory-generated
             arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=memory --define auth=none
+          - template: hexagonal
+            name: hexagonal-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=sqlite --define cli=true
+          - template: hexagonal
+            name: hexagonal-memory-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=memory
+          - template: hexagonal
+            name: hexagonal-postgres-generated
+            arguments: --define project-description=example --define gh-username=ijanc --define domain=example.org --define store=postgres --define cli=true
+            database_url: postgres://postgres:postgres@localhost:5432/postgres
     services:
       postgres:
         image: postgres:17

@@ -1,3 +1,5 @@
 [workspace]
 members = ["*-generated"]
+# A workspace of its own; `just check` runs it through --manifest-path.
+exclude = ["hexagonal-generated"]
 resolver = "2"

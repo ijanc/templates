@@ -1,1 +1,4 @@
 /target
+# hexagonal-generated is a workspace of its own.
+/hexagonal-generated/target
+/hexagonal-generated/Cargo.lock

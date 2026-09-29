@@ -1,0 +1,24 @@
+[package]
+name = "{{project-name}}"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "{{project-description}}"
+
+[dependencies]
+anyhow.workspace = true
+application.workspace = true
+axum.workspace = true
+dotenvy.workspace = true
+http_adapter.workspace = true
+listenfd.workspace = true
+{%- if sqlx %}
+store_sqlx.workspace = true
+{%- else %}
+store_memory.workspace = true
+{%- endif %}
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

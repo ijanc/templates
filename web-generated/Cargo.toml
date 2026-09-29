@@ -13,6 +13,7 @@ argon2 = "0.6.0"
 axum = { version = "0.8.9", features = ["macros"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 dotenvy = "0.15.7"
+listenfd = "1.0.2"
 minijinja = { version = "2.24.0", features = ["loader", "urlencode"] }
 minijinja-autoreload = "2.24.0"
 serde = { version = "1.0.229", features = ["derive"] }

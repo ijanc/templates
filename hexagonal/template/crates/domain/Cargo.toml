@@ -1,0 +1,17 @@
+[package]
+name = "{{project-name}}-domain"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "{{project-description}}: entities, rules and ports"
+
+[dependencies]
+async-trait.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[lib]
+name = "domain"

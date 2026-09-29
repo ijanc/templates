@@ -1,0 +1,12 @@
+[licenses]
+allow = [
+  "Apache-2.0",
+  "BSD-3-Clause",
+{%- if store == "postgres" %}
+  "CDLA-Permissive-2.0",
+{%- endif %}
+  "ISC",
+  "MIT",
+  "Unicode-3.0",
+  "Zlib",
+]

@@ -1,0 +1,21 @@
+[package]
+name = "{{project-name}}-application"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "{{project-description}}: use cases"
+
+[dependencies]
+async-trait.workspace = true
+domain.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+store_memory.workspace = true
+tokio.workspace = true
+
+[lib]
+name = "application"

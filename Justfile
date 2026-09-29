@@ -13,6 +13,7 @@ generate-all:
     just generate-web
     just generate-lib
     just generate-lib-serde
+    just generate-hexagonal
 
 # Regenerate daemon-generated from ./daemon
 generate-daemon $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
@@ -110,9 +111,21 @@ generate-lib-serde $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
         --define domain=example.org \
         --define serde=true
 
+# Regenerate hexagonal-generated from ./hexagonal (sqlx, SQLite, cli)
+generate-hexagonal $CARGO_NAME="your name" $CARGO_EMAIL="author@example.com":
+    rm -rf hexagonal-generated
+    cargo generate --path ./hexagonal \
+        --name hexagonal-generated --vcs none \
+        --define project-description="An example generated using the hexagonal template" \
+        --define gh-username=ijanc \
+        --define domain=example.org \
+        --define store=sqlite \
+        --define cli=true
+
 # Check every *-generated project
 check:
     cargo check --workspace --tests
+    cargo check --manifest-path hexagonal-generated/Cargo.toml --workspace --tests
     for d in *-generated; do \
         if ls $d/*.[1-8] >/dev/null 2>&1; then \
             mandoc -Tlint -Werror $d/*.[1-8] || exit 1; \

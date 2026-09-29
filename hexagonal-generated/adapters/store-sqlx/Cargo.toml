@@ -1,0 +1,22 @@
+[package]
+name = "hexagonal-generated-store-sqlx"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "An example generated using the hexagonal template: sqlite item repository"
+
+[dependencies]
+async-trait.workspace = true
+chrono.workspace = true
+domain.workspace = true
+sqlx.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+testkit.workspace = true
+tokio.workspace = true
+
+[lib]
+name = "store_sqlx"

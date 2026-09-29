@@ -17,6 +17,10 @@ just migrate-run # needs sqlx-cli
 just run
 ```
 
+`just dev` serves under bacon and restarts on every change; systemfd holds
+the socket open in between, so requests made during a rebuild wait instead of
+being refused. Needs `cargo install bacon systemfd`.
+
 | path                     | description                   |
 | ------------------------ | ----------------------------- |
 | `/healthz`               | liveness                      |

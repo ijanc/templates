@@ -1,0 +1,20 @@
+[package]
+name = "hexagonal-generated"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "An example generated using the hexagonal template"
+
+[dependencies]
+anyhow.workspace = true
+application.workspace = true
+axum.workspace = true
+dotenvy.workspace = true
+http_adapter.workspace = true
+listenfd.workspace = true
+store_sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

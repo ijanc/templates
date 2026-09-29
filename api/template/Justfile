@@ -23,6 +23,11 @@ build:
 run:
     cargo run
 
+# Serve with bacon, rebuilding and restarting on change; systemfd holds
+# ADDR open across restarts. Needs: cargo install bacon systemfd
+dev ADDR="127.0.0.1:8080":
+    systemfd --no-pid -s http::{% raw %}{{ADDR}}{% endraw %} -- bacon serve
+
 # Run unit and integration tests
 test:
     cargo test

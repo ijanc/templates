@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: {{project-name}}
+    static_configs:
+      - targets: ["app:8080"]

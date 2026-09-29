@@ -1,0 +1,17 @@
+[package]
+name = "hexagonal-generated-cli"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "An example generated using the hexagonal template: command line client"
+
+[dependencies]
+anyhow.workspace = true
+application.workspace = true
+clap.workspace = true
+dotenvy.workspace = true
+store_sqlx.workspace = true
+tokio.workspace = true
+uuid.workspace = true
